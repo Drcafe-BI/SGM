@@ -434,6 +434,23 @@ main{max-width:100%;margin:0 auto;padding:22px 24px;width:100%}
 .al-ios-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
 .al-ios-actions .btn{min-width:130px;text-decoration:none}
 .al-ios-note{margin:10px 0 0;font-size:12.5px;color:var(--text-muted);line-height:1.5}
+/* Alert History */
+.ah-summary{margin-top:12px}
+.ah-chips{display:flex;gap:8px;flex-wrap:wrap}
+.ah-chips .pill{padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;background:var(--surface-3);border:1px solid var(--border)}
+.ah-chips .pill.ok{background:var(--success-soft);color:var(--success-600);border-color:#a7f3d0}
+.ah-chips .pill.warn{background:var(--warning-soft);color:var(--accent-600);border-color:#fde68a}
+.ah-chips .pill.err{background:var(--danger-soft);color:var(--danger-600);border-color:#fecaca}
+.ah-people{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ah-person{font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:#fff}
+.ah-person.ok{border-color:#a7f3d0;background:#f0fdf4}
+.ah-person.warn{border-color:#fde68a;background:#fffbeb}
+.ah-person.err{border-color:#fecaca;background:#fef2f2}
+.ah-sub{display:block;font-size:10.5px;color:var(--text-subtle)}
+.ah-hist summary{cursor:pointer;color:#1d4ed8;font-size:12px}
+.ah-hist ul{margin:6px 0 0;padding-left:16px;font-size:12px;white-space:normal;min-width:200px}
+.al-team{display:block;margin-top:4px;color:var(--text-subtle)}
+.al-my-pending{border-color:#fdba74 !important;background:#fff7ed !important;color:#9a3412 !important}
 /* Sign-in alerts prompt */
 .al-prompt-ic{width:58px;height:58px;margin:0 auto 4px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:#e8efff;box-shadow:0 0 0 8px rgba(29,78,216,.08)}
 #alertPromptModal .modal-foot .btn{min-width:130px}
@@ -2687,6 +2704,10 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
         <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
         <span class="nav-tx">Alerts</span>
       </button>
+      <button class="nav-btn" data-view="alerthistory" data-roles="admin,am,op" title="Alert History">
+        <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+        <span class="nav-tx">Alert History</span>
+      </button>
       <div class="side-nav-label side-admin" data-roles="admin">Admin</div>
       <button class="nav-btn" data-view="stores" data-roles="admin" title="Stores">
         <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18M10 20v-6h4v6"/></svg>
@@ -3153,6 +3174,31 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
           <div id="alRuns"></div>
         </div>
       </div>
+    </section>
+
+    <!-- ============ ALERT HISTORY ============
+         Who each cost alert was sent to, who has seen it, whose action is still
+         pending, and every action (with edits) — per check. -->
+    <section id="view-alerthistory" class="view">
+      <div class="report-shell">
+        <div class="filter-bar">
+          <div class="field" style="min-width:230px"><label for="ahRun">Check</label><select class="control-input" id="ahRun"></select></div>
+          <div class="field" style="min-width:170px"><label for="ahStatus">Show</label>
+            <select class="control-input" id="ahStatus">
+              <option value="">Everyone</option>
+              <option value="pending">Action pending</option>
+              <option value="unseen">Not seen yet</option>
+              <option value="done">Action submitted</option>
+            </select></div>
+          <div class="field search-field"><label for="ahSearch">Search</label><input class="control-input" id="ahSearch" type="text" placeholder="Store, person or cost line"></div>
+          <div class="bar-actions">
+            <button class="btn" id="ahFollowBtn" type="button" data-roles="admin" title="Send the hourly follow-up now to everyone with a pending action">Send follow-ups now</button>
+            <div class="exp-dd"><button type="button" class="btn exp-btn" aria-haspopup="menu" aria-expanded="false">Export <span class="exp-caret" aria-hidden="true"></span></button><div class="exp-menu" role="menu"><button class="exp-item" role="menuitem" id="ahExportBtn" type="button"><span class="exp-ic xl">XLS</span>Excel (.csv)</button></div></div>
+          </div>
+        </div>
+        <div class="ah-summary" id="ahSummary"></div>
+      </div>
+      <div class="table-card"><table class="tx-pro al-table" id="ahTable"></table></div>
     </section>
 
     <!-- ============ BACKUP & SETTINGS ============ -->
@@ -4565,6 +4611,7 @@ async function finalizeLogin(){
   refreshCurrentView();
   renderTransactions();
   openAlertsFromLink();   /* signed in from a tapped notification */
+  if(location.hash !== "#alerts") remindPendingActionsOnLogin();   /* cost alerts waiting for my action */
 }
 
 async function logout(){
@@ -12545,6 +12592,7 @@ function refreshCurrentView(){
   if(name==="stores"){ renderStoreFilters(); renderStores(); }
   if(name==="users"){ reloadProfiles().then(renderUsers); }
   if(name==="alerts") renderAlerts().catch(function(e){ console.error(e); });
+  if(name==="alerthistory") renderAlertHistory().catch(function(e){ console.error(e); });
 
   /* Reports work from records loaded in memory. If those are more than a few
      minutes old, fetch them again and redraw, so other users' entries show up. */
@@ -12968,6 +13016,7 @@ document.addEventListener("keydown", function(e){
       await ensureAlertsOnLogin();
       switchView("daily");
       openAlertsFromLink();   /* opened from a tapped notification */
+      if(location.hash !== "#alerts") remindPendingActionsOnLogin();   /* cost alerts waiting for my action */
     } else {
       q("loginScreen").classList.add("show");
     }
@@ -13281,11 +13330,21 @@ async function alertsTurnOn(){
    SGM, the device is registered silently with no pop-up.
    Viewers get no alerts, so they are not asked.
    ============================================================ */
-function alPromptShow(mode){
+function alPromptShow(mode, count){
   return new Promise(function(resolve){
     var m = q("alertPromptModal"), title = q("alPromptTitle"), text = q("alPromptText"),
         steps = q("alPromptSteps"), go = q("alPromptGo"), later = q("alPromptLater"), msg = q("alPromptMsg");
     msg.textContent = ""; steps.innerHTML = ""; go.style.display = ""; go.disabled = false;
+    if(mode === "pending"){
+      /* cost alerts still waiting for this person's action */
+      title.textContent = count + " cost alert" + (count === 1 ? "" : "s") + " need your action";
+      text.textContent = "Open Alerts and write what was done for each one. You get a reminder every hour (07:00–23:00) until every alert has your action.";
+      go.textContent = "Open Alerts"; later.textContent = "Later";
+      later.onclick = function(){ m.classList.remove("show"); resolve(); };
+      go.onclick = function(){ m.classList.remove("show"); switchView("alerts"); resolve(); };
+      m.classList.add("show");
+      return;
+    }
     if(mode === "ios"){
       var inApp = alIosBrowser() === "inapp";
       title.textContent = inApp ? "Open SGM in Safari for alerts" : "Add SGM to your Home Screen for alerts";
@@ -13375,6 +13434,7 @@ async function renderAlertTable(previewResult){
   var table = q("alTable"), info = q("alRunInfo");
   if(!table) return;
   var rows = [], label = "";
+  var receiptsByAlert = null;   /* per-person follow-up (SQL 05); null = not set up yet */
   if(previewResult){
     rows = (previewResult.alerts || []).map(function(o){
       return { store_id:o.store_id, cost_key:o.cost_key, cost_label:o.cost_label, level:o.level,
@@ -13404,6 +13464,13 @@ async function renderAlertTable(previewResult){
       });
     } else {
       rows = aRes.data || [];
+      /* each person's receipt: seen / action taken (only rows this user may read) */
+      var rcRes = await sb.from("alert_receipts")
+        .select("id,alert_id,user_id,username,seen_at,action_note,action_at,notify_count").eq("run_id", run.id);
+      if(!rcRes.error){
+        receiptsByAlert = {};
+        (rcRes.data || []).forEach(function(x){ (receiptsByAlert[x.alert_id] = receiptsByAlert[x.alert_id] || []).push(x); });
+      }
     }
     label = "Last check " + new Date(run.run_at).toLocaleString("en-GB", { weekday:"short", day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" }) +
             " · " + dateLabel(run.period_from) + " – " + dateLabel(run.period_to);
@@ -13426,6 +13493,31 @@ async function renderAlertTable(previewResult){
   var canAck = !!(currentUser && ["admin","am","op","dept"].indexOf(currentUser.role) >= 0);
   function ackCell(r){
     if(!r.id) return '<td style="text-align:left;color:var(--text-subtle)">—</td>';   /* preview rows are not saved */
+    if(receiptsByAlert) return myActionCell(r, receiptsByAlert[r.id] || []);
+    return sharedAckCell(r);
+  }
+  /* Per person (SQL 05): your own action + the team's progress on this alert */
+  function myActionCell(r, list){
+    var mine = currentUser && list.find(function(x){ return x.user_id === currentUser.id; });
+    var html = '<td class="al-ack" style="text-align:left">';
+    if(mine && mine.action_at){
+      html += '✓ ' + escapeHtml(mine.action_note) + '<small>you · ' + escapeHtml(whenText(mine.action_at)) + '</small>' +
+        '<button type="button" class="row-btn al-my-btn" data-rid="' + mine.id + '" data-note="' + escapeAttr(mine.action_note) + '" style="margin-top:4px">Edit</button>';
+    } else if(mine){
+      html += '<button type="button" class="row-btn al-my-btn al-my-pending" data-rid="' + mine.id + '">Add my action</button>';
+    }
+    var others = list.filter(function(x){ return !(currentUser && x.user_id === currentUser.id); });
+    if(others.length){
+      var done = others.filter(function(x){ return x.action_at; }).length;
+      var unseen = others.filter(function(x){ return !x.seen_at; }).length;
+      html += '<small class="al-team">' + (mine ? 'Others: ' : '') + done + ' of ' + others.length + ' done' +
+        (unseen ? ' · ' + unseen + ' not seen' : '') + '</small>';
+    } else if(!mine){
+      html += '<span style="color:var(--text-subtle)">—</span>';
+    }
+    return html + '</td>';
+  }
+  function sharedAckCell(r){
     if(r.ack_note){
       return '<td class="al-ack">✓ ' + escapeHtml(r.ack_note) +
         '<small>' + escapeHtml((r.ack_by_name || "") + (r.ack_at ? " · " + whenText(r.ack_at) : "")) + '</small>' +
@@ -13455,6 +13547,40 @@ async function renderAlertTable(previewResult){
   table.querySelectorAll(".al-ack-btn").forEach(function(b){
     b.addEventListener("click", function(){ ackCostAlert(b.dataset.id, b.dataset.note || ""); });
   });
+  table.querySelectorAll(".al-my-btn").forEach(function(b){
+    b.addEventListener("click", function(){ submitMyAlertAction(b.dataset.rid, b.dataset.note || ""); });
+  });
+}
+
+/* Save the signed-in person's action for one alert (recorded with time in alert_action_log) */
+async function submitMyAlertAction(receiptId, current){
+  var note = window.prompt("What action did you take for this alert?", current || "");
+  if(note === null) return;
+  if(!note.trim()){ showToast("Please write what action was taken."); return; }
+  var res = await sb.rpc("sgm_submit_alert_action", { p_receipt_id: Number(receiptId), p_note: note.trim() });
+  if(res.error){ showToast("Could not save: " + res.error.message); return; }
+  showToast("✓ Your action is saved.", "success");
+  renderAlertTable();
+  if(document.querySelector('.nav-btn.active[data-view="alerthistory"]')) renderAlertHistory();
+}
+
+/* Opening Alerts (or tapping a notification) counts as having seen your alerts */
+function markMyAlertsSeen(){
+  if(!currentUser) return;
+  sb.rpc("sgm_mark_alerts_seen").then(function(){}, function(){});
+}
+
+/* After sign-in: remind about alerts still waiting for this person's action */
+async function remindPendingActionsOnLogin(){
+  try {
+    if(!currentUser || currentUser.role === "viewer" || !currentUser.id) return;
+    var run = await sb.from("alert_runs").select("id").order("id", { ascending:false }).limit(1);
+    if(run.error || !run.data || !run.data.length) return;
+    var res = await sb.from("alert_receipts").select("id", { count:"exact", head:true })
+      .eq("run_id", run.data[0].id).eq("user_id", currentUser.id).is("action_at", null);
+    if(res.error || !res.count) return;
+    await alPromptShow("pending", res.count);
+  } catch(e){ console.warn("Pending actions reminder:", e); }
 }
 
 /* Record (or clear) what was done about a cost alert. Who / when are stamped by the server. */
@@ -13661,6 +13787,165 @@ async function alertsRunCheck(dryRun){
   }
 }
 
+/* ============================================================
+   ALERT HISTORY — per check: who was notified, seen, pending, actions
+   ============================================================ */
+var ahRows = [];          /* the rows on screen, for the CSV export */
+async function renderAlertHistory(){
+  var table = q("ahTable"), sum = q("ahSummary"), runSel = q("ahRun");
+  if(!table) return;
+  /* 1) the check picker: last 20 checks */
+  if(!runSel.options.length){
+    var runs = await sb.from("alert_runs").select("id,run_at,trigger,stores_over").order("id", { ascending:false }).limit(20);
+    if(runs.error){ table.innerHTML = '<tbody><tr><td class="empty">' + escapeHtml(runs.error.message) + '</td></tr></tbody>'; return; }
+    runSel.innerHTML = (runs.data || []).map(function(r, i){
+      return '<option value="' + r.id + '">' + escapeHtml(whenText(r.run_at) + " · " + (r.trigger === "manual" ? "run by hand" : "Sunday check") + " · " + r.stores_over + " stores" + (i === 0 ? " (latest)" : "")) + '</option>';
+    }).join("");
+  }
+  var runId = Number(runSel.value);
+  if(!runId){ table.innerHTML = '<tbody><tr><td class="empty">No checks yet.</td></tr></tbody>'; sum.innerHTML = ""; return; }
+  table.innerHTML = '<tbody><tr><td class="empty">Loading…</td></tr></tbody>';
+
+  /* 2) receipts of that check + the alert details + every action submitted */
+  var rc = await sb.from("alert_receipts")
+    .select("id,alert_id,user_id,username,created_at,last_notified_at,notify_count,seen_at,action_note,action_at,cost_alerts(store_id,cost_label,level,actual_pct,target_pct)")
+    .eq("run_id", runId).order("alert_id");
+  if(rc.error){
+    table.innerHTML = '<tbody><tr><td class="empty">' + (/alert_receipts|does not exist|schema cache/i.test(rc.error.message || "")
+      ? "Alert history is not set up yet: run 05_SGM_alert_receipts_actions.sql in Supabase." : escapeHtml(rc.error.message)) + '</td></tr></tbody>';
+    sum.innerHTML = ""; return;
+  }
+  var ids = (rc.data || []).map(function(x){ return x.id; });
+  var logs = {};
+  if(ids.length){
+    var lg = await sb.from("alert_action_log").select("receipt_id,note,created_at").in("receipt_id", ids).order("created_at");
+    (lg.data || []).forEach(function(l){ (logs[l.receipt_id] = logs[l.receipt_id] || []).push(l); });
+  }
+  var names = {};
+  (state.users || []).forEach(function(u){ if(u.id) names[u.id] = u.display || u.username; });
+
+  /* 3) filter */
+  var status = q("ahStatus").value, term = (q("ahSearch").value || "").trim().toLowerCase();
+  var all = (rc.data || []).map(function(x){
+    var a = x.cost_alerts || {};
+    return { r:x, store:a.store_id || "", line:a.cost_label || "", level:a.level || 1, actual:a.actual_pct, target:a.target_pct,
+             person: names[x.user_id] || x.username, log: logs[x.id] || [] };
+  });
+  var rows = all.filter(function(o){
+    if(status === "pending" && o.r.action_at) return false;
+    if(status === "unseen" && o.r.seen_at) return false;
+    if(status === "done" && !o.r.action_at) return false;
+    if(term && (o.store + " " + o.line + " " + o.person + " " + o.r.username).toLowerCase().indexOf(term) < 0) return false;
+    return true;
+  });
+  rows.sort(function(a, b){
+    return ((a.r.action_at ? 1 : 0) - (b.r.action_at ? 1 : 0)) || (b.level - a.level) ||
+           a.store.localeCompare(b.store) || a.person.localeCompare(b.person);
+  });
+  ahRows = rows;
+
+  /* 4) summary: per person */
+  var people = {};
+  all.forEach(function(o){
+    var p = people[o.r.user_id] || (people[o.r.user_id] = { name:o.person, total:0, done:0, seen:0 });
+    p.total++; if(o.r.action_at) p.done++; if(o.r.seen_at) p.seen++;
+  });
+  var plist = Object.keys(people).map(function(k){ return people[k]; })
+    .sort(function(a, b){ return (b.total - b.done) - (a.total - a.done) || a.name.localeCompare(b.name); });
+  var totDone = all.filter(function(o){ return o.r.action_at; }).length, totSeen = all.filter(function(o){ return o.r.seen_at; }).length;
+  sum.innerHTML =
+    '<div class="ah-chips"><span class="pill">' + all.length + ' alert notices</span>' +
+    '<span class="pill ok">' + totDone + ' actions submitted</span>' +
+    '<span class="pill warn">' + (all.length - totDone) + ' pending</span>' +
+    '<span class="pill err">' + (all.length - totSeen) + ' not seen</span></div>' +
+    '<div class="ah-people">' + plist.map(function(p){
+      var cls = p.done === p.total ? "ok" : (p.seen ? "warn" : "err");
+      return '<span class="ah-person ' + cls + '"><b>' + escapeHtml(p.name) + '</b> ' + p.done + '/' + p.total + ' done' +
+        (p.seen < p.total ? ' · ' + (p.total - p.seen) + ' not seen' : '') + '</span>';
+    }).join("") + '</div>';
+
+  /* 5) table */
+  var thead = '<thead><tr class="tx-cols">' +
+    '<th style="text-align:left">Status</th><th style="text-align:left">Store</th><th style="text-align:left">Cost line</th><th style="text-align:left">Level</th>' +
+    '<th style="text-align:left">Person</th><th style="text-align:left">Notified</th><th style="text-align:left">Seen</th>' +
+    '<th style="text-align:left">Action taken</th><th style="text-align:left">History</th></tr></thead>';
+  if(!rows.length){ table.innerHTML = thead + '<tbody><tr><td colspan="9" class="empty">Nothing matches.</td></tr></tbody>'; return; }
+  var body = rows.map(function(o){
+    var r = o.r, st = r.action_at ? '<span class="dash-status good">Done</span>'
+      : (r.seen_at ? '<span class="dash-status warn">Pending</span>' : '<span class="dash-status bad">Not seen</span>');
+    var mine = currentUser && r.user_id === currentUser.id;
+    var hist = o.log.length
+      ? '<details class="ah-hist"><summary>' + o.log.length + ' entr' + (o.log.length === 1 ? 'y' : 'ies') + '</summary><ul>' +
+          o.log.slice().reverse().map(function(l){ return '<li><small>' + escapeHtml(whenText(l.created_at)) + '</small> ' + escapeHtml(l.note) + '</li>'; }).join("") +
+        '</ul></details>'
+      : '<span style="color:var(--text-subtle)">—</span>';
+    return '<tr>' +
+      '<td style="text-align:left">' + st + '</td>' +
+      '<td style="text-align:left"><span class="tx-store-chip">' + escapeHtml(o.store) + '</span></td>' +
+      '<td style="text-align:left;white-space:normal">' + escapeHtml(o.line) + '<small class="ah-sub">' + pct(o.actual) + ' vs ' + pct(o.target) + '</small></td>' +
+      '<td style="text-align:left"><span class="al-lvl l' + (o.level === 2 ? 2 : 1) + '">L' + (o.level === 2 ? 2 : 1) + '</span></td>' +
+      '<td style="text-align:left">' + escapeHtml(o.person) + '</td>' +
+      '<td style="text-align:left">' + escapeHtml(whenText(r.created_at)) + '<small class="ah-sub">' + r.notify_count + '× · last ' + escapeHtml(whenText(r.last_notified_at)) + '</small></td>' +
+      '<td style="text-align:left">' + (r.seen_at ? escapeHtml(whenText(r.seen_at)) : '<span style="color:#b91c1c">Not seen</span>') + '</td>' +
+      '<td class="al-ack" style="text-align:left">' + (r.action_at ? escapeHtml(r.action_note) + '<small>' + escapeHtml(whenText(r.action_at)) + '</small>' : '<span style="color:var(--text-subtle)">—</span>') +
+        (mine ? '<button type="button" class="row-btn al-my-btn" data-rid="' + r.id + '" data-note="' + escapeAttr(r.action_note || "") + '" style="margin-top:4px">' + (r.action_at ? 'Edit' : 'Add my action') + '</button>' : '') + '</td>' +
+      '<td style="text-align:left">' + hist + '</td>' +
+    '</tr>';
+  }).join("");
+  table.innerHTML = thead + '<tbody>' + body + '</tbody>';
+  table.querySelectorAll(".al-my-btn").forEach(function(b){
+    b.addEventListener("click", function(){ submitMyAlertAction(b.dataset.rid, b.dataset.note || ""); });
+  });
+}
+function exportAlertHistoryCsv(){
+  if(!ahRows.length){ showToast("Nothing to export."); return; }
+  var out = [["Status","Store","Cost line","Level","Actual %","Target %","Person","First notified","Times notified","Last notified","Seen","Action taken","Action time","All actions (oldest first)"]];
+  ahRows.forEach(function(o){
+    var r = o.r;
+    out.push([r.action_at ? "Done" : (r.seen_at ? "Pending" : "Not seen"), o.store, o.line, "L" + o.level, round(o.actual, 2), round(o.target, 2),
+      o.person, r.created_at, r.notify_count, r.last_notified_at, r.seen_at || "", r.action_note || "", r.action_at || "",
+      o.log.map(function(l){ return l.created_at + ": " + l.note; }).join(" | ")]);
+  });
+  download("SGM_Alert_History_" + q("ahRun").value + "_" + todayIso() + ".csv",
+    "﻿" + out.map(function(r){ return r.map(csvEscape).join(","); }).join("\r\n"), "text/csv;charset=utf-8");
+  showToast("CSV downloaded.", "success");
+}
+/* Admin: send the hourly follow-up now (ignores quiet hours) */
+async function sendFollowupsNow(){
+  var btn = q("ahFollowBtn"), label = btn.textContent;
+  btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    var session = (await sb.auth.getSession()).data.session;
+    if(!session) throw new Error("Your session has expired. Sign in again.");
+    async function call(dry){
+      var resp = await fetch(SUPABASE_URL + "/functions/v1/alert-followups", {
+        method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
+        body: JSON.stringify({ dryRun: dry, force: true })
+      });
+      var out = {}; try { out = await resp.json(); } catch(ignore){}
+      if(resp.status === 404) throw new Error("The alert-followups function is not deployed in Supabase yet.");
+      if(!resp.ok) throw new Error(out.error || ("The follow-up function answered " + resp.status + "."));
+      return out;
+    }
+    var pre = await call(true);
+    if(!pre.people || !pre.people.length){ showToast("Nobody has a pending action. Nothing to send.", "success"); return; }
+    var withPhone = pre.people.filter(function(p){ return p.devices > 0; }).length;
+    if(!window.confirm(pre.people.length + " people still have alerts without an action (" + withPhone + " with alerts turned on):\n" +
+        pre.people.map(function(p){ return p.username + " (" + p.pending + ")"; }).join(", ") + "\n\nSend them a follow-up now?")) return;
+    btn.textContent = "Sending…";
+    var out = await call(false);
+    showToast("✓ Follow-ups sent: " + out.notifications_sent + " notification(s)" + (out.notifications_failed ? ", " + out.notifications_failed + " failed" : "") + ".", "success");
+    renderAlertHistory();
+  } catch(e){ showToast("Follow-ups: " + (e.message || e)); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+(function bindAlertHistory(){
+  ["ahRun","ahStatus"].forEach(function(id){ var el = q(id); if(el) el.addEventListener("change", function(){ renderAlertHistory(); }); });
+  var s = q("ahSearch"); if(s) s.addEventListener("input", function(){ renderAlertHistory(); });
+  var f = q("ahFollowBtn"); if(f) f.addEventListener("click", function(){ sendFollowupsNow(); });
+  var x = q("ahExportBtn"); if(x) x.addEventListener("click", exportAlertHistoryCsv);
+})();
+
 /* Admin: remind stores with no entry for yesterday (preview first, then send) */
 var REMINDERS_FUNCTION_URL = SUPABASE_URL + "/functions/v1/daily-missing-reminders";
 async function remindMissingEntries(){
@@ -13700,6 +13985,7 @@ async function remindMissingEntries(){
 }
 
 async function renderAlerts(){
+  markMyAlertsSeen();   /* opening Alerts = my alerts are seen */
   await renderAlertDevice();
   await renderAlertTable();
   if(currentUser && currentUser.role === "admin"){ renderAlertSubs(); renderAlertRuns(); renderAlertRules(true); }
