@@ -417,6 +417,10 @@ main{max-width:100%;margin:0 auto;padding:22px 24px;width:100%}
 .draft-banner .draft-text{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
 .draft-banner .draft-text strong{font-size:13px}
 .draft-banner .draft-text span{font-size:12px;color:#6b5a9e}
+/* iPhone install steps: Open in Safari / Copy link */
+.al-ios-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.al-ios-actions .btn{min-width:130px;text-decoration:none}
+.al-ios-note{margin:10px 0 0;font-size:12.5px;color:var(--text-muted);line-height:1.5}
 /* Sign-in alerts prompt */
 .al-prompt-ic{width:58px;height:58px;margin:0 auto 4px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:#e8efff;box-shadow:0 0 0 8px rgba(29,78,216,.08)}
 #alertPromptModal .modal-foot .btn{min-width:130px}
@@ -13036,6 +13040,54 @@ var VAPID_PUBLIC_KEY = "BN8eFvSMOetv1_HgtvU-l6NcF44n6XchquLOM_-LGpvm8QObbMgOW093
 var ALERTS_FUNCTION_URL = SUPABASE_URL + "/functions/v1/weekly-labour-alerts";
 
 function alIsIos(){ return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+
+/* ---------- iPhone: which browser is SGM open in? ----------
+   Alerts on iPhone only work from the SGM Ops icon on the Home Screen. Safari,
+   Chrome, Edge and Firefox (recent iOS) can add it; apps like WhatsApp, Gmail,
+   Teams or Instagram open links in their own viewer, which cannot. */
+function alIosBrowser(){
+  var ua = navigator.userAgent;
+  if(/CriOS/i.test(ua)) return "chrome";
+  if(/EdgiOS/i.test(ua)) return "edge";
+  if(/FxiOS/i.test(ua)) return "firefox";
+  if(/FBAN|FBAV|FB_IAB|Instagram|Line\/|LinkedInApp|Snapchat|MicroMessenger|GSA\/|WhatsApp|Teams|Outlook|Gmail/i.test(ua)) return "inapp";
+  if(/Safari\//i.test(ua) && /Version\//i.test(ua)) return "safari";
+  return "inapp";   /* no "Safari/Version" marker: an app's own web viewer */
+}
+var AL_IOS_SHARE = '<span class="al-ios-share">⬆︎</span>';
+var AL_LAST_STEP = '<li>Open <b>SGM Ops</b> from the Home Screen and sign in — you will be asked to turn alerts on</li>';
+/* Steps (and Open in Safari / Copy link buttons) for the browser in use */
+function alIosStepsHtml(){
+  var b = alIosBrowser(), appUrl = location.href.replace(/#.*$/, "");
+  var buttons = '<div class="al-ios-actions">' +
+      '<a class="btn primary" href="x-safari-' + escapeAttr(appUrl) + '">Open in Safari</a>' +
+      '<button type="button" class="btn" data-copy-link="' + escapeAttr(appUrl) + '">Copy link</button></div>';
+  if(b === "safari"){
+    return '<ol class="al-steps"><li>Tap <b>Share</b> ' + AL_IOS_SHARE + ' at the bottom of Safari</li>' +
+      '<li>Scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b></li>' + AL_LAST_STEP + '</ol>' +
+      '<p class="al-ios-note">No <b>Add to Home Screen</b> in the list? You are in another app\'s viewer: tap the <b>Safari / compass</b> icon at the bottom to open SGM in Safari first.</p>';
+  }
+  if(b === "chrome" || b === "edge" || b === "firefox"){
+    var name = b === "chrome" ? "Chrome" : b === "edge" ? "Edge" : "Firefox";
+    var where = b === "chrome" ? "next to the address bar at the top" : "in the menu (⋯ or ☰), then <b>Share</b>";
+    return '<ol class="al-steps"><li>Tap <b>Share</b> ' + AL_IOS_SHARE + ' ' + where + '</li>' +
+      '<li>Tap <b>Add to Home Screen</b>, then <b>Add</b></li>' + AL_LAST_STEP + '</ol>' +
+      '<p class="al-ios-note">No <b>Add to Home Screen</b>? Your iPhone or ' + name + ' needs an update — or open SGM in Safari instead:</p>' + buttons;
+  }
+  return '<p class="al-ios-note" style="margin-top:0">SGM is open inside another app (WhatsApp, Gmail, Teams…), which cannot add it to the Home Screen. Open it in <b>Safari</b>:</p>' +
+    buttons +
+    '<ol class="al-steps"><li>If <b>Open in Safari</b> does nothing: tap <b>Copy link</b>, open <b>Safari</b>, paste the link in the address bar</li>' +
+    '<li>In Safari tap <b>Share</b> ' + AL_IOS_SHARE + ' → <b>Add to Home Screen</b> → <b>Add</b></li>' + AL_LAST_STEP + '</ol>';
+}
+/* "Copy link" buttons inside the iPhone steps */
+document.addEventListener("click", function(e){
+  var b = e.target.closest && e.target.closest("[data-copy-link]");
+  if(!b) return;
+  var link = b.getAttribute("data-copy-link");
+  (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+    .then(function(){ showToast("✓ Link copied. Open Safari and paste it in the address bar.", "success"); })
+    .catch(function(){ window.prompt("Copy this link, then open Safari and paste it:", link); });
+});
 function alIsStandalone(){ return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true; }
 function alPushSupported(){ return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
 function alB64ToBytes(b64){
@@ -13090,7 +13142,7 @@ async function renderAlertDevice(){
     title.textContent = "Add SGM to your Home Screen first";
     sub.textContent = "On iPhone, alerts only work from the Home Screen app.";
     dev.classList.add("warn");
-    howto.innerHTML = '<ol class="al-steps"><li>In Safari tap <b>Share</b> <span class="al-ios-share">⬆︎</span></li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b></li><li>Open <b>SGM Ops</b> from the Home Screen, sign in, and come back to <b>Alerts</b></li></ol>';
+    howto.innerHTML = alIosStepsHtml();
     return;
   }
   if(!alPushSupported()){
@@ -13194,9 +13246,10 @@ function alPromptShow(mode){
         steps = q("alPromptSteps"), go = q("alPromptGo"), later = q("alPromptLater"), msg = q("alPromptMsg");
     msg.textContent = ""; steps.innerHTML = ""; go.style.display = ""; go.disabled = false;
     if(mode === "ios"){
-      title.textContent = "Add SGM to your Home Screen for alerts";
-      text.textContent = "On iPhone, alerts only work from the SGM Ops app on your Home Screen.";
-      steps.innerHTML = '<ol class="al-steps"><li>In Safari tap <b>Share</b> <span class="al-ios-share">⬆︎</span></li><li>Tap <b>Add to Home Screen</b>, then <b>Add</b></li><li>Open <b>SGM Ops</b> from the Home Screen and sign in — you will be asked to turn alerts on</li></ol>';
+      var inApp = alIosBrowser() === "inapp";
+      title.textContent = inApp ? "Open SGM in Safari for alerts" : "Add SGM to your Home Screen for alerts";
+      text.textContent = "On iPhone, alerts only work from the SGM Ops icon on your Home Screen.";
+      steps.innerHTML = alIosStepsHtml();
       go.style.display = "none"; later.textContent = "Continue";
     } else if(mode === "blocked"){
       title.textContent = "Notifications are blocked for SGM";
