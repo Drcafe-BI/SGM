@@ -417,6 +417,18 @@ main{max-width:100%;margin:0 auto;padding:22px 24px;width:100%}
 .draft-banner .draft-text{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
 .draft-banner .draft-text strong{font-size:13px}
 .draft-banner .draft-text span{font-size:12px;color:#6b5a9e}
+/* "by …" under the row buttons in the Daily Report */
+.tx-savedby{display:inline-block;margin-left:4px;font-size:10.5px;color:var(--text-subtle);white-space:nowrap}
+.lock-banner{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
+.lock-banner .draft-ic{background:#ea580c}
+/* Alert "action taken" */
+.al-ack{font-size:12px;color:#166534;white-space:normal;min-width:180px}
+.al-ack small{display:block;color:var(--text-subtle)}
+/* Unusual-number warnings in the submit confirmation */
+.entry-warn{margin:0 0 12px;padding:12px 14px;border-radius:12px;background:#fffbeb;border:1px solid #fcd34d;color:#78350f;font-size:13px}
+.entry-warn strong{display:block;margin-bottom:6px;color:#92400e}
+.entry-warn ul{margin:0 0 6px;padding-left:18px;line-height:1.55}
+.entry-warn span{font-size:12px;color:#92400e}
 /* Optional QA Score button (Daily Entry, section 10 header) */
 .qa-toggle{
   display:inline-flex;align-items:center;gap:6px;margin-left:10px;flex:none;
@@ -2684,7 +2696,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
     <div class="hero-mark">SGM</div>
     <div class="hero-text">
       <h3>Daily Operations Entry</h3>
-      <p>Fill in what you have — blanks are treated as zero.</p>
+      <p id="entryHeroSub">Fill in what you have — blanks are treated as zero.</p>
     </div>
   </div>
   <div class="hero-right">
@@ -2694,6 +2706,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
     <input type="date" class="entry-date-input" id="f-date-hero" aria-label="Entry date">
     <input type="hidden" id="f-date">
     <button class="entry-icon-btn danger" id="clearDayBtn" type="button" title="Delete the saved entry for this date">🗑 Clear</button>
+    <button class="entry-icon-btn" id="historyDayBtn" type="button" title="Who submitted or changed this day" style="display:none">🕘 History</button>
     <span class="entry-status new" id="entryStatus">
       <span class="dot"></span><span id="entryStatusText">New entry</span>
     </span>
@@ -2709,6 +2722,8 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
 </div>
 <!-- Shown while this user has a saved draft (one day at a time) -->
 <div class="draft-banner" id="draftBanner" role="status" style="display:none"></div>
+<!-- Shown to store logins when the picked day is in a closed month -->
+<div class="draft-banner lock-banner" id="lockBanner" role="status" style="display:none"></div>
 
            <div class="entry-layout">
         <div class="entry-main">
@@ -3082,6 +3097,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
             <span class="bar-sep" data-roles="admin"></span>
             <button class="btn" id="alPreviewBtn" type="button" data-roles="admin" title="Calculate this week's alerts without sending anything">Preview check</button>
             <button class="btn gold" id="alRunBtn" type="button" data-roles="admin" title="Run the Sunday check now and send the notifications">Run check now</button>
+            <button class="btn" id="alRemindBtn" type="button" data-roles="admin" title="Remind stores (and their Area Managers) that have not submitted yesterday's entry. Also runs every day at 10:00 AM.">Remind missing entries</button>
           </div>
         </div>
         <div class="al-howto" id="alHowto"></div>
@@ -3229,6 +3245,13 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
       <button class="btn" id="draftBlockOk" type="button">OK</button>
       <button class="btn primary" id="draftBlockGo" type="button">Open first draft</button>
     </div>
+  </div>
+</div>
+  <!-- ============ ENTRY HISTORY ============ -->
+<div class="modal-backdrop" id="historyModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head"><h3 id="historyTitle">History</h3><button class="modal-x" id="historyClose" type="button">×</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr" id="historyBody"></div>
   </div>
 </div>
   <!-- ============ POST-SUBMIT MODAL ============ -->
@@ -3492,27 +3515,61 @@ var DEFAULT_STORES = [
   { id:"DC293", name:"DC293", area:"Qassim",           type:"Neighbourhood", storeManager:"", areaManager:"", opManager:"", status:"Active" }
 ];
 
-function buildDefaultUsers(){
-  var users = [{ username:"admin", password:"admin", role:"admin", display:"System Administrator", storeIds:[] }];
-  var seenAM = {}, seenOM = {};
-  DEFAULT_STORES.forEach(function(s){
-    if(s.areaManager && !seenAM[s.areaManager]){
-      seenAM[s.areaManager] = true;
-      users.push({ username: s.areaManager.split(/\s+/)[0].toLowerCase(), password:"0000", role:"am", display: s.areaManager, storeIds:[] });
-    }
-    if(s.opManager && !seenOM[s.opManager]){
-      seenOM[s.opManager] = true;
-      users.push({ username: s.opManager.split(/\s+/)[0].toLowerCase(), password:"0000", role:"op", display: s.opManager, storeIds:[] });
-    }
-  });
-  users.forEach(function(u){
-    if(u.role === "am"){
-      u.storeIds = DEFAULT_STORES.filter(function(s){return s.areaManager === u.display;}).map(function(s){return s.id;});
-    } else if(u.role === "op"){
-      u.storeIds = DEFAULT_STORES.filter(function(s){return s.opManager === u.display;}).map(function(s){return s.id;});
-    }
-  });
-  return users;
+/* Users come from the Supabase "profiles" table after sign-in. There is no
+   built-in user list or default password any more. */
+function buildDefaultUsers(){ return []; }
+
+/* Checks for numbers that are probably typing mistakes. They never block a
+   submit; the confirm pop-up lists them so the store can look again. */
+function entryWarnings(rec, c){
+  var w = [], sales = n(c.salesWithoutTax);
+  if(n(rec.transactions) > 0 && sales <= 0) w.push("Sales W/O Tax is " + money(sales) + " SAR but there are " + integer(rec.transactions) + " transactions.");
+  if(sales <= 0) return w;
+  var gross = n(rec.grossSales) - n(rec.voidAmount), taxShare = gross > 0 ? n(rec.taxAmount) / gross * 100 : 0;
+  if(gross > 0 && (taxShare < 10 || taxShare > 16)) w.push("Tax is " + pct(taxShare) + " of gross sales (15% VAT is normally about 13%).");
+  if(c.employeePct > 35) w.push("Employee Cost is " + pct(c.employeePct) + " of sales (target " + pct(TARGETS.employee) + "). Check the headcounts and overtime hours.");
+  if(n(rec.COGS) === 0) w.push("COGS is 0. Enter the day's cost of goods sold.");
+  else if(c.COGSPct < 10 || c.COGSPct > 50) w.push("COGS incl. wastage is " + pct(c.COGSPct) + " of sales (usually 20–35%).");
+  if(c.wastagePct > 5) w.push("Wastage is " + pct(c.wastagePct) + " of sales (target " + pct(TARGETS.wastage) + ").");
+  if(n(rec.targetSales) > 0 && Math.abs(c.salesVsTargetPct) > 60) w.push("Sales are " + pct(c.salesVsTargetPct) + " against the target. Check Target Sales and Gross Sales.");
+  if(n(rec.transactions) > 0 && (c.at < 5 || c.at > 150)) w.push("Average ticket (AT) is SAR " + at2(c.at) + ". Check Transactions and Gross Sales.");
+  if(c.cashVariancePct > 2) w.push("Cash deposited differs from cash sales by SAR " + money(c.cashVariance) + " (" + pct(c.cashVariancePct) + " of sales).");
+  if(Math.abs(c.dcVariance) > 100 && Math.abs(c.dcVariance) > 0.05 * Math.max(c.dcAppTotal, c.dcPosTotal)) w.push("DC App: App and POS differ by SAR " + money(c.dcVariance) + ".");
+  if(c.totalDiscountPct > 15) w.push("Discounts are " + pct(c.totalDiscountPct) + " of sales.");
+  return w;
+}
+
+/* ---------- Who saved an entry (columns from SQL 03, 26 Nov) ---------- */
+function userNameById(id){
+  if(!id) return "";
+  if(currentUser && currentUser.id === id) return "you";
+  var u = (state.users || []).find(function(x){ return x.id === id; });
+  return u ? (u.display || u.username) : "another user";   /* store logins cannot read other profiles */
+}
+function whenText(iso){
+  if(!iso) return "";
+  return new Date(iso).toLocaleString("en-GB", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
+}
+function savedByText(rec){
+  if(!rec || !rec._updatedBy) return "";
+  return "Last saved by " + userNameById(rec._updatedBy) + (rec._updatedAt ? " · " + whenText(rec._updatedAt) : "");
+}
+
+/* ---------- Month lock for store logins (same rule as the database, SQL 03) ----------
+   current month always open; the previous month until the 5th; older months closed.
+   Admin, Area and Operation Managers can still change any date. */
+function entryCutoffIso(){
+  var t = parseDate(todayIso());
+  var first = new Date(t.getFullYear(), t.getMonth() - (t.getDate() <= 5 ? 1 : 0), 1, 12);
+  return isoDate(first);
+}
+function isEntryLocked(dateIso){
+  return !!(currentUser && currentUser.role === "store" && dateIso && dateIso < entryCutoffIso());
+}
+
+/* Viewer and Department Manager accounts can look but not enter or change data */
+function isReadOnlyRole(){
+  return !!(currentUser && (currentUser.role === "viewer" || currentUser.role === "dept"));
 }
 
 var TARGETS = {
@@ -4056,10 +4113,13 @@ async function sbFetchProfile(userId){
 
 /* Save a daily record (upsert — insert or update) */
 async function sbSaveDailyRecord(record){
+  /* fields starting with "_" (who / when) belong to the row, not the entry data */
+  var clean = {};
+  Object.keys(record).forEach(function(k){ if(k.charAt(0) !== "_") clean[k] = record[k]; });
   const payload = {
     store_id: record.storeId,
     date: record.date,
-    data: record,
+    data: clean,
     breakdowns: record.breakdowns || [],
     updated_at: new Date().toISOString()
   };
@@ -4081,6 +4141,10 @@ async function sbLoadRecords(storeIds, fromDate, toDate){
   /* Convert back to the record shape the app expects */
   return data.map(function(row){
     var rec = Object.assign({}, row.data);
+    /* who / when (columns added 26 Nov; undefined before SQL 03 is run) */
+    rec._updatedBy = row.updated_by || null;
+    rec._updatedAt = row.updated_at || null;
+    rec._createdBy = row.created_by || null;
     rec.storeId = row.store_id;
     rec.date = row.date;
     rec.breakdowns = row.breakdowns || [];
@@ -4092,7 +4156,49 @@ function canManageEntries(){
   if(!currentUser) return false;
   return currentUser.role === "admin" || currentUser.role === "am";
 }
-  /* Load ALL daily records for this user into memory */
+/* ---------- Which daily records are in memory ----------
+   At sign-in only the last 24 months are loaded (the period pickers go back
+   24 months), so sign-in stays fast as years of entries pile up. A report that
+   asks for an older date loads the older entries on demand (ensureRecordsFrom),
+   and backups / "Export All Daily CSV" load everything first. */
+var RECORDS_WINDOW_MONTHS = 24;
+var recordsFrom = null;          /* earliest date loaded; "" = everything; null = not loaded yet */
+function defaultRecordsFrom(){
+  var d = parseDate(currentMonthIso() + "-01");
+  d.setMonth(d.getMonth() - RECORDS_WINDOW_MONTHS);
+  return isoDate(d);
+}
+/* Load entries older than what is in memory. fromIso "" / null = everything.
+   Resolves true when something new was loaded (the view should redraw). */
+var recordsExtending = null;
+async function ensureRecordsFrom(fromIso){
+  if(!currentUser || recordsFrom === "" || recordsFrom === null) return false;
+  var want = fromIso || "";
+  if(want !== "" && want >= recordsFrom) return false;
+  if(recordsExtending) { await recordsExtending; return ensureRecordsFrom(fromIso); }
+  var storeIds = visibleStores.map(function(s){ return s.id; });
+  if(!storeIds.length) return false;
+  recordsExtending = (async function(){
+    var older = await sbLoadRecords(storeIds, want || null, addDays(recordsFrom, -1));
+    state.records = older.concat(state.records);
+    recordsFrom = want;
+    console.log("Loaded " + older.length + " older records (from " + (want || "the start") + ")");
+  })();
+  try { await recordsExtending; } finally { recordsExtending = null; }
+  return true;
+}
+
+/* Called by a report with the earliest date it shows: loads older entries if
+   needed, then draws the report again once (no loop: the second call is a no-op). */
+function needRecordsFrom(fromIso, rerender){
+  if(fromIso === undefined || recordsFrom === null || recordsFrom === "") return;
+  if(fromIso && fromIso >= recordsFrom) return;
+  ensureRecordsFrom(fromIso).then(function(changed){ if(changed && rerender) rerender(); })
+    .catch(function(e){ console.warn("Loading older entries:", e); });
+}
+
+  /* Load the daily records for this user into memory (last 24 months, or more
+     if a report has already asked for older entries) */
 async function loadAllRecordsForUser(){
   try {
     var storeIds = visibleStores.map(function(s){ return s.id; });
@@ -4100,10 +4206,12 @@ async function loadAllRecordsForUser(){
       state.records = [];
       return;
     }
-    var records = await sbLoadRecords(storeIds, null, null);
+    var from = recordsFrom === null ? defaultRecordsFrom() : recordsFrom;
+    var records = await sbLoadRecords(storeIds, from || null, null);
     state.records = records;
+    recordsFrom = from;
     recordsLoadedAt = Date.now();
-    console.log("Loaded " + records.length + " records");
+    console.log("Loaded " + records.length + " records" + (from ? " from " + from : ""));
   } catch(e){
     console.error("Could not load records:", e);
     /* Keep what is already loaded rather than blanking every report */
@@ -4135,7 +4243,6 @@ function defaultState(){
     selectedStore:"DC288",
     stores: JSON.parse(JSON.stringify(DEFAULT_STORES)),
     users: buildDefaultUsers(),
-    defaultStorePin:"0000",
     settings:{ plannedHours:24 },
     salary: JSON.parse(JSON.stringify(DEFAULT_SALARY)),
     records:[],
@@ -4165,13 +4272,11 @@ function loadState(){
       if(!st.opManager) st.opManager = "";
       if(!st.area) st.area = "";
     });
-    s.users = Array.isArray(s.users) && s.users.length ? s.users : buildDefaultUsers();
-    s.users.forEach(function(u){
-      if(!u.role) u.role = "am";
-      if(!u.display) u.display = u.username;
-      if(!Array.isArray(u.storeIds)) u.storeIds = [];
-    });
-    if(!s.defaultStorePin) s.defaultStorePin = "0000";
+    /* Users and daily records are always loaded from the server after sign-in;
+       older versions of the app kept them (and default passwords) in this browser. */
+    s.users = [];
+    s.records = [];
+    delete s.defaultStorePin;
     s.settings = s.settings || { plannedHours:24 };
     s.salary = Array.isArray(s.salary) && s.salary.length ? s.salary : JSON.parse(JSON.stringify(DEFAULT_SALARY));
     s.actions = Array.isArray(s.actions) ? s.actions : [];
@@ -4248,7 +4353,10 @@ function recordsBetweenStores(storeIds, start, end){
 
 function saveState(msg){
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    /* Only settings and the picked store are kept in this browser. Daily records
+       and users come from the server (and would soon outgrow browser storage). */
+    var keep = Object.assign({}, state, { records: [], users: [] });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(keep));
     updateStorageStat();
     if(msg) showToast(msg);
     return true;
@@ -4320,7 +4428,8 @@ async function tryStoreLogin(){
       username: profile.username,
       display: profile.display || profile.username,
       storeId: (profile.storeIds && profile.storeIds[0]) || code,
-      storeIds: profile.storeIds || []
+      storeIds: profile.storeIds || [],
+      id: profile.id
     };
     err.textContent = "";
     await finalizeLogin();
@@ -4357,7 +4466,10 @@ async function tryManagerLogin(){
       role: profile.role,
       username: profile.username,
       display: profile.display || profile.username,
-      storeIds: profile.storeIds || []
+      storeIds: profile.storeIds || [],
+      id: profile.id,
+      /* A store account signing in on this tab works like the Store tab */
+      storeId: profile.role === "store" ? ((profile.storeIds && profile.storeIds[0]) || null) : null
     };
     err.textContent = "";
     await finalizeLogin();
@@ -4423,6 +4535,8 @@ async function logout(){
   visibleStores = [];
   state.records = [];
   currentDraft = null;          /* the next user loads their own draft */
+  recordsFrom = null;           /* the next user starts with the normal 24-month window */
+  recordsLoadedAt = 0;
   draftServerOk = true;
   renderDraftBanner();
   q("loginStoreCode").value = "";
@@ -4456,6 +4570,7 @@ async function restoreSession(){
       username: profile.username,
       display: profile.display || profile.username,
       storeIds: profile.storeIds || [],
+      id: profile.id,
       storeId: (profile.role === "store") ? (profile.storeIds[0] || null) : null
     };
 
@@ -5693,6 +5808,57 @@ async function loadDailyRecord(){
   recalcAllCalcFields();
   updateTopSubmitBtn();
   renderDraftBanner();
+  renderEntryMeta(fromDraft ? null : found, wanted);
+}
+
+/* Under the Daily Entry title: who last saved this day. Store logins also get
+   a notice (and no Submit) when the day is in a closed month. */
+function renderEntryMeta(found, dateIso){
+  var sub = q("entryHeroSub");
+  if(sub){
+    var by = savedByText(found);
+    sub.textContent = by || "Fill in what you have — blanks are treated as zero.";
+  }
+  var locked = isEntryLocked(dateIso);
+  var lb = q("lockBanner");
+  if(lb){
+    lb.style.display = locked ? "" : "none";
+    if(locked) lb.innerHTML = '<span class="draft-ic" aria-hidden="true">🔒</span><div class="draft-text"><strong>' +
+      escapeHtml(dateLabel(dateIso)) + ' is in a closed month</strong><span>Store logins can enter or change days from ' +
+      escapeHtml(dateLabel(entryCutoffIso())) + ' onwards. Ask your Area Manager to change this day.</span></div>';
+  }
+  if(!isReadOnlyRole()){
+    ["submitDayBtn","draftDayBtn"].forEach(function(id){ var b = q(id); if(b) b.disabled = locked; });
+  }
+  var hb = q("historyDayBtn");
+  if(hb) hb.style.display = (currentUser && ["admin","am","op"].indexOf(currentUser.role) >= 0) ? "" : "none";
+}
+
+/* Change history of one store-day (admin / Area / Operation Managers) */
+async function openEntryHistory(){
+  var storeId = normalizeStoreId(state.selectedStore), date = q("f-date") ? q("f-date").value : "";
+  var modal = q("historyModal"), body = q("historyBody");
+  q("historyTitle").textContent = "History — " + storeId + " · " + dateLabel(date);
+  body.innerHTML = '<div class="bd-empty">Loading…</div>';
+  modal.classList.add("show");
+  var res = await sb.from("daily_records_log").select("action,changed_by_name,changed_at,old_data")
+    .eq("store_id", storeId).eq("date", date).order("changed_at", { ascending:false }).limit(50);
+  if(res.error){
+    body.innerHTML = '<div class="bd-empty">' + (/daily_records_log|does not exist|schema cache/i.test(res.error.message || "")
+      ? "History is not set up yet: run 03_SGM_entry_audit_lock_alert_ack.sql in Supabase."
+      : escapeHtml(res.error.message)) + '</div>';
+    return;
+  }
+  var rows = res.data || [];
+  if(!rows.length){ body.innerHTML = '<div class="bd-empty">No changes recorded for this day yet. Changes are recorded from 26 Nov 2026.</div>'; return; }
+  var verb = { insert:"Submitted", update:"Changed", "delete":"Deleted" };
+  body.innerHTML = '<ul class="al-runs">' + rows.map(function(r){
+    var old = r.old_data && r.old_data.data ? calculate(Object.assign({}, r.old_data.data)) : null;
+    return '<li><strong>' + escapeHtml((verb[r.action] || r.action) + " by " + (r.changed_by_name || "system")) + '</strong>' +
+      '<span>' + escapeHtml(whenText(r.changed_at)) +
+      (old ? ' · before this change: Sales W/O Tax SAR ' + escapeHtml(money(old.salesWithoutTax)) + ', COGS SAR ' + escapeHtml(money(old.cogsAmount)) : '') +
+      '</span></li>';
+  }).join("") + '</ul>';
 }
 
 /* ============================================================
@@ -5799,11 +5965,12 @@ async function openDraftIfAny(){
 }
 
 async function saveDraft(){
-  if(!currentUser || currentUser.role === "viewer"){ showToast("Viewer accounts are read-only."); return; }
+  if(!currentUser || isReadOnlyRole()){ showToast("This account is read-only."); return; }
   syncBreakdownsFromDom();
   var rec = getFormRecord();
   rec.storeId = normalizeStoreId(rec.storeId);
   if(!rec.storeId || !rec.date){ showToast("Pick a store and date first."); return; }
+  if(isEntryLocked(rec.date)){ showToast(dateLabel(rec.date) + " is in a closed month. Ask your Area Manager to change it."); return; }
 
   /* Only one day can be in draft */
   if(currentDraft && !draftMatches(rec.storeId, rec.date)){
@@ -5933,7 +6100,9 @@ function updateEntryHero(){
   return out;
 }
 function submitDailyRecord(){
-  if(currentUser && currentUser.role === "viewer"){ showToast("Viewer accounts are read-only."); return; }
+  if(currentUser && isReadOnlyRole()){ showToast("This account is read-only."); return; }
+  var subDate = (q("f-date-hero") && q("f-date-hero").value) || (q("f-date") && q("f-date").value);
+  if(isEntryLocked(subDate)){ showToast(dateLabel(subDate) + " is in a closed month. Ask your Area Manager to change it."); return; }
   syncBreakdownsFromDom();
 
   /* ---- NEW: require ALL fields (except breakdown) to be filled ---- */
@@ -5984,6 +6153,15 @@ function submitDailyRecord(){
       '<br>Wastage '+escapeHtml(pct(c.wastagePct))+' · Employee '+escapeHtml(pct(c.employeePct))+' · COGS incl. wastage SAR '+escapeHtml(money(c.cogsAmount))+' ('+escapeHtml(pct(c.COGSPct))+')'+
       (currentBreakdowns.length ? '<br>Breakdowns: '+currentBreakdowns.length+' event(s) · '+round(c.breakdownHours,2)+' hrs · Lost sales SAR '+escapeHtml(money(c.estimatedLostSales)) : '')+
     '</div>';
+  /* Numbers that look unusual: shown so the store can check before submitting */
+  var warns = entryWarnings(rec, c);
+  if(warns.length){
+    html = '<div class="entry-warn"><strong>Please double-check ' + (warns.length === 1 ? 'this number' : 'these ' + warns.length + ' numbers') + ' before submitting</strong><ul>' +
+      warns.map(function(w){ return '<li>' + escapeHtml(w) + '</li>'; }).join("") +
+      '</ul><span>If they are correct, you can still submit.</span></div>' + html;
+  }
+  var confirmBtn = q("confirmModalSave");
+  if(confirmBtn) confirmBtn.textContent = warns.length ? "Numbers are correct — Submit" : "✓ Confirm & Submit";
   q("confirmSummary").innerHTML = html;
   /* EBITDA for the day: fill in now, or as soon as the store's budget has loaded */
   function showConfirmEbitda(){
@@ -6102,9 +6280,13 @@ function closeConfirmModal(){
     await sbSaveDailyRecord(rec);
   } catch(e){
     console.error("Save failed:", e);
-    showToast("Could not save to server: " + (e.message || "unknown error"));
+    var msg = String((e && e.message) || "unknown error");
+    showToast(/SGM_LOCKED/.test(msg) ? msg.replace(/^.*SGM_LOCKED:\s*/, "") : "Could not save to server: " + msg);
     return;
   }
+  rec._updatedBy = currentUser ? currentUser.id : null;
+  rec._updatedAt = new Date().toISOString();
+  renderEntryMeta(rec, rec.date);
 
   /* The draft for this store and day is now submitted, so remove it */
   if(draftMatches(rec.storeId, rec.date)){
@@ -7193,6 +7375,8 @@ function renderDashboard(){
   var start = mv+"-01";
   var d = parseDate(start); d.setMonth(d.getMonth()+1); d.setDate(0);
   var end = isoDate(d);
+  /* the month before is used for "vs same days last month" */
+  needRecordsFrom(shiftMonth(mv, -1) + "-01", renderDashboard);
 
   var ids = resolveStoreScope();
   var agg = aggregate(recordsBetweenStores(ids, start, end));
@@ -7558,6 +7742,7 @@ function renderWeekly(){
   if(!q("weekDate4").value) q("weekDate4").value = addDays(base, -21);
 
   var periods = buildWeeklyPeriods();
+  needRecordsFrom(periods.reduce(function(m, p){ return p.start < m ? p.start : m; }, periods[0].start), renderWeekly);
   var range = periods.map(function(p){ return dateLabel(p.start)+" — "+dateLabel(p.end); }).join("  |  ");
 
   renderReportTable2Col(q("weeklyTable"), periods, q("weeklySearch")?q("weeklySearch").value:"", "weeklyCount", "inlineActionPlanHost");
@@ -8970,6 +9155,7 @@ function renderMonthly(){
   }
 
   var periods = buildMonthlyPeriods();
+  needRecordsFrom(periods.reduce(function(m, p){ return p.start < m ? p.start : m; }, periods[0].start), renderMonthly);
 
   renderReportTable2Col(q("monthlyTable"), periods,
     q("monthlySearch")?q("monthlySearch").value:"",
@@ -9454,7 +9640,7 @@ function renderTxList(){
   var allowDelete = canManageEntries();
   var currentDate = q("f-date") ? q("f-date").value : "";
   var currentStore = state.selectedStore;
-  var canFill = !(currentUser && currentUser.role === "viewer");
+  var canFill = !(currentUser && isReadOnlyRole());
   var tbody = "<tbody>";
   rowsOut.forEach(function(item){
     var rec = item.record;
@@ -9487,6 +9673,7 @@ function renderTxList(){
     tbody += '<td class="tx-actions">' +
       '<button class="row-btn tx-load" type="button" data-date="' + escapeAttr(rec.date) + '" data-store="' + escapeAttr(rec.storeId) + '">Open</button>' +
       (allowDelete ? '<button class="row-btn danger tx-delete" type="button" data-date="' + escapeAttr(rec.date) + '" data-store="' + escapeAttr(rec.storeId) + '">Delete</button>' : '') +
+      (rec._updatedBy ? '<span class="tx-savedby" title="' + escapeAttr(savedByText(rec)) + '">by ' + escapeHtml(userNameById(rec._updatedBy)) + '</span>' : '') +
       '</td>';
     tbody += '</tr>';
   });
@@ -9696,7 +9883,7 @@ function renderTxGrid(){
   totalCalc.googleRating = agg.googleRating;
   totalCalc.dcAppRating = agg.dcAppRating;
 
-  var canFill = !(currentUser && currentUser.role === "viewer");
+  var canFill = !(currentUser && isReadOnlyRole());
   var currentDate = q("f-date") ? q("f-date").value : "";
   var currentStore = state.selectedStore;
   var colgroup = '<colgroup><col class="metric-col" style="width:285px"><col style="width:150px">';
@@ -9752,6 +9939,9 @@ function txOnlyMissing(){
   return !!(box && box.checked);
 }
 function renderTransactions(){
+  /* "All years" needs every entry; a From date before the loaded range needs the older ones */
+  var allYears = q("txYear") && q("txYear").value === "all";
+  needRecordsFrom(allYears ? "" : (q("txFrom") && q("txFrom").value) || undefined, renderTransactions);
   var only = txOnlyMissing();
   var listHost = q("txTableHost"), gridHost = q("txGridHost"), toggle = q("txViewToggle");
   if(toggle) toggle.classList.toggle("is-disabled", only);
@@ -9799,7 +9989,7 @@ function renderTxMissingOnly(){
   }
 
   var WD = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  var canFill = !(currentUser && currentUser.role === "viewer");
+  var canFill = !(currentUser && isReadOnlyRole());
   var thead = '<thead><tr class="tx-cols">' +
     '<th class="tx-sticky tx-c-date">Date</th>' +
     '<th style="text-align:left">Day</th>' +
@@ -10410,7 +10600,16 @@ function exportReport(kind){
     "text/csv;charset=utf-8");
   showToast("CSV downloaded.", "success");
 }
-function exportAllDailyCsv(){
+/* Backups and the full CSV need every entry, not just the last 24 months */
+async function loadEverythingFirst(){
+  showToast("Loading all daily entries…");
+  try { await ensureRecordsFrom(""); return true; }
+  catch(e){ showToast("Could not load all entries: " + (e.message || e)); return false; }
+}
+async function exportAllDailyCsv(){ if(await loadEverythingFirst()) exportAllDailyCsvNow(); }
+async function backupJson(){ if(await loadEverythingFirst()) backupJsonNow(); }
+
+function exportAllDailyCsvNow(){
   var headers = ["Store","Date"].concat(NUMERIC_KEYS).concat([
     "Sales W/O Tax","Net Sales","ADT","AT","Food Sales","Grab & Go Sales","Merchandise Sales",
     "Food Mix %","Grab & Go Mix %","Merchandise Mix %","Water Qty V/S Transaction %","Modifier Mix %","Upsize %",
@@ -10435,7 +10634,7 @@ function exportAllDailyCsv(){
     "\ufeff"+csv.map(function(r){return r.map(csvEscape).join(",");}).join("\r\n"),
     "text/csv;charset=utf-8");
 }
-function backupJson(){
+function backupJsonNow(){
   var pkg = { application:"SGM Operations Control", exportedAt: new Date().toISOString(), data: state };
   download("SGM_Local_Backup_"+todayIso()+".json", JSON.stringify(pkg,null,2), "application/json");
   showToast("Backup downloaded.");
@@ -10653,7 +10852,8 @@ function renderStores(){
     thead += '<th data-ssort="'+h.key+'" style="cursor:pointer;user-select:none">'+
              escapeHtml(h.label)+'<span class="sort-ind" style="opacity:.6;margin-left:4px;font-size:9px">'+ind+'</span></th>';
   });
-if(canManageEntries()) thead += "<th>Actions</th>";
+/* every row has at least an Open button, so the Actions header is always shown */
+thead += "<th>Actions</th>";
 thead += "</tr></thead>";
   var tbody = "<tbody>";
   if(!list.length){
@@ -11259,6 +11459,7 @@ async function reloadProfiles(){
         storeIds: p.store_ids || [],
         department: p.department || "",
         password: "",
+        id: p.id,
         is_active: p.is_active !== false 
       };
     });
@@ -11949,9 +12150,9 @@ async function saveUserModal(){
   }
 }
 function exportUsersCsv(){
-  var rows = [["Username","Display","Role","Assigned Stores","Password"]];
+  var rows = [["Username","Display","Role","Department","Assigned Stores","Status"]];
   state.users.forEach(function(u){
-    rows.push([u.username, u.display||"", u.role, (u.storeIds||[]).join(" | "), u.password||""]);
+    rows.push([u.username, u.display||"", u.role, u.department||"", (u.storeIds||[]).join(" | "), u.is_active === false ? "Disabled" : "Enabled"]);
   });
   download("SGM_Users_"+todayIso()+".csv",
     "\ufeff"+rows.map(function(r){return r.map(csvEscape).join(",");}).join("\r\n"),
@@ -12449,6 +12650,10 @@ function bindEvents(){
     q("submitDayBtn").addEventListener("click", submitDailyRecord);
     /* Drafts */
     q("draftDayBtn").addEventListener("click", function(){ saveDraft().catch(function(e){ console.error(e); }); });
+    /* Change history of the open day */
+    q("historyDayBtn").addEventListener("click", function(){ openEntryHistory().catch(function(e){ showToast("History: " + (e.message || e)); }); });
+    q("historyClose").addEventListener("click", function(){ q("historyModal").classList.remove("show"); });
+    q("historyModal").addEventListener("click", function(e){ if(e.target === q("historyModal")) q("historyModal").classList.remove("show"); });
     function closeDraftBlock(){ q("draftBlockModal").classList.remove("show"); }
     q("draftBlockClose").addEventListener("click", closeDraftBlock);
     q("draftBlockOk").addEventListener("click", closeDraftBlock);
@@ -13001,10 +13206,21 @@ async function renderAlertTable(previewResult){
   var thead = '<thead><tr class="tx-cols">' +
     '<th style="text-align:left">Level</th><th style="text-align:left">Store</th><th style="text-align:left">Cost line</th>' +
     '<th>Target %</th><th>Actual %</th><th>Over by</th><th>Actual (SAR)</th><th>Sales (SAR)</th>' +
-    '<th style="text-align:left">Area Manager</th><th style="text-align:left">Notified</th></tr></thead>';
+    '<th style="text-align:left">Area Manager</th><th style="text-align:left">Notified</th><th style="text-align:left">Action taken</th></tr></thead>';
   if(!rows.length){
-    table.innerHTML = thead + '<tbody><tr><td colspan="10" class="empty">Every cost line is within its alert level for the stores you can see.</td></tr></tbody>';
+    table.innerHTML = thead + '<tbody><tr><td colspan="11" class="empty">Every cost line is within its alert level for the stores you can see.</td></tr></tbody>';
     return;
+  }
+  /* Managers (not viewers) can record what was done about an alert from a real check */
+  var canAck = !!(currentUser && ["admin","am","op","dept"].indexOf(currentUser.role) >= 0);
+  function ackCell(r){
+    if(!r.id) return '<td style="text-align:left;color:var(--text-subtle)">—</td>';   /* preview rows are not saved */
+    if(r.ack_note){
+      return '<td class="al-ack">✓ ' + escapeHtml(r.ack_note) +
+        '<small>' + escapeHtml((r.ack_by_name || "") + (r.ack_at ? " · " + whenText(r.ack_at) : "")) + '</small>' +
+        (canAck ? '<button type="button" class="row-btn al-ack-btn" data-id="' + r.id + '" data-note="' + escapeAttr(r.ack_note) + '" style="margin-top:4px">Edit</button>' : '') + '</td>';
+    }
+    return '<td style="text-align:left">' + (canAck ? '<button type="button" class="row-btn al-ack-btn" data-id="' + r.id + '">Mark action taken</button>' : '<span style="color:var(--text-subtle)">Open</span>') + '</td>';
   }
   var body = rows.map(function(r){
     var s = storeInfo[r.store_id] || {};
@@ -13021,9 +13237,29 @@ async function renderAlertTable(previewResult){
       '<td>' + money(r.sales) + '</td>' +
       '<td style="text-align:left">' + escapeHtml(s.areaManager || "—") + '</td>' +
       '<td style="text-align:left;white-space:normal">' + escapeHtml((r.recipients || []).join(", ") || "—") + '</td>' +
+      ackCell(r) +
     '</tr>';
   }).join("");
   table.innerHTML = thead + '<tbody>' + body + '</tbody>';
+  table.querySelectorAll(".al-ack-btn").forEach(function(b){
+    b.addEventListener("click", function(){ ackCostAlert(b.dataset.id, b.dataset.note || ""); });
+  });
+}
+
+/* Record (or clear) what was done about a cost alert. Who / when are stamped by the server. */
+async function ackCostAlert(id, current){
+  var note = window.prompt("What action was taken for this alert?\n(Leave empty and press OK to clear it.)", current || "");
+  if(note === null) return;
+  var res = await sb.from("cost_alerts").update({ ack_note: note.trim() || null }).eq("id", id).select("id");
+  if(res.error){
+    showToast(/ack_note|column|schema cache/i.test(res.error.message || "")
+      ? "Not set up yet: run 03_SGM_entry_audit_lock_alert_ack.sql in Supabase."
+      : "Could not save: " + res.error.message);
+    return;
+  }
+  if(!res.data || !res.data.length){ showToast("You can only mark alerts for your own stores."); return; }
+  showToast(note.trim() ? "✓ Action recorded." : "Action cleared.", "success");
+  renderAlertTable();
 }
 
 /* ============================================================
@@ -13208,6 +13444,44 @@ async function alertsRunCheck(dryRun){
   }
 }
 
+/* Admin: remind stores with no entry for yesterday (preview first, then send) */
+var REMINDERS_FUNCTION_URL = SUPABASE_URL + "/functions/v1/daily-missing-reminders";
+async function remindMissingEntries(){
+  var btn = q("alRemindBtn"), label = btn.textContent;
+  btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    var session = (await sb.auth.getSession()).data.session;
+    if(!session) throw new Error("Your session has expired. Sign in again.");
+    async function call(dry){
+      var resp = await fetch(REMINDERS_FUNCTION_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
+        body: JSON.stringify({ dryRun: dry })
+      });
+      var out = {}; try { out = await resp.json(); } catch(ignore){}
+      if(resp.status === 404) throw new Error("The daily-missing-reminders function is not deployed in Supabase yet.");
+      if(!resp.ok) throw new Error(out.error || ("The reminder function answered " + resp.status + "."));
+      return out;
+    }
+    var pre = await call(true);
+    if(!pre.missing_stores || !pre.missing_stores.length){
+      showToast("Every active store has submitted " + dateLabel(pre.date) + ". Nobody to remind.", "success");
+      return;
+    }
+    var withPhone = (pre.people || []).filter(function(p){ return p.devices > 0; }).length;
+    if(!window.confirm(
+      pre.missing_stores.length + " store(s) have not submitted " + dateLabel(pre.date) + ":\n" + pre.missing_stores.join(", ") +
+      "\n\n" + (pre.people || []).length + " people would be reminded (" + withPhone + " with alerts turned on).\nSend the reminders now?")) return;
+    btn.textContent = "Sending…";
+    var out = await call(false);
+    showToast("✓ Reminders sent: " + out.notifications_sent + " notification(s)" + (out.notifications_failed ? ", " + out.notifications_failed + " failed" : "") + ".", "success");
+  } catch(e){
+    showToast("Reminders: " + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = label;
+  }
+}
+
 async function renderAlerts(){
   await renderAlertDevice();
   await renderAlertTable();
@@ -13221,6 +13495,8 @@ async function renderAlerts(){
   if(test) test.addEventListener("click", function(){ alertsTest(); });
   if(pre) pre.addEventListener("click", function(){ alertsRunCheck(true); });
   if(run) run.addEventListener("click", function(){ alertsRunCheck(false); });
+  var remind = q("alRemindBtn");
+  if(remind) remind.addEventListener("click", function(){ remindMissingEntries(); });
   var rSave = q("alRulesSaveBtn"), rReset = q("alRulesResetBtn");
   if(rSave) rSave.addEventListener("click", function(){ saveAlertRules(); });
   if(rReset) rReset.addEventListener("click", function(){ renderAlertRules(true); });
@@ -13232,7 +13508,9 @@ async function renderAlerts(){
 
 /* Opening the app from a notification (…#alerts) goes straight to Alerts */
 function openAlertsFromLink(){
-  if(location.hash === "#alerts" && currentUser) switchView("alerts");
+  /* #alerts from cost alerts, #dailyreport from missing-entry reminders */
+  var v = (location.hash || "").replace("#", "");
+  if(currentUser && /^[a-z]+$/.test(v) && document.querySelector('.nav-btn[data-view="' + v + '"]')) switchView(v);
 }
 window.addEventListener("hashchange", openAlertsFromLink);
 
