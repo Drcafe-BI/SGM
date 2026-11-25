@@ -417,6 +417,19 @@ main{max-width:100%;margin:0 auto;padding:22px 24px;width:100%}
 .draft-banner .draft-text{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
 .draft-banner .draft-text strong{font-size:13px}
 .draft-banner .draft-text span{font-size:12px;color:#6b5a9e}
+/* iPhone Safari: picture guide + arrow at Safari's Share button */
+.a2hs-guide{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 8px}
+.a2hs-guide i{font-style:normal;color:var(--text-subtle);font-size:18px}
+.a2hs-step{display:flex;flex-direction:column;align-items:center;gap:4px;width:84px;font-size:11px;color:var(--text-muted);text-align:center;line-height:1.25}
+.a2hs-ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#f2f4f8;border:1px solid var(--border);font-size:20px;color:#0a84ff}
+.a2hs-ic.a2hs-add{font-size:13px;font-weight:700}
+.a2hs-arrow{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:400;   /* above the floating Submit button */
+  display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;animation:a2hsBounce 1.2s ease-in-out infinite}
+.a2hs-bubble{background:#0b1220;color:#fff;font-size:13px;line-height:1.4;padding:10px 14px;border-radius:14px;text-align:center;max-width:280px;box-shadow:0 12px 28px -8px rgba(0,0,0,.5)}
+.a2hs-bubble small{display:block;margin-top:3px;font-size:11px;color:rgba(255,255,255,.7)}
+.a2hs-point{font-size:26px;color:#0b1220;line-height:1}
+@keyframes a2hsBounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+@media (prefers-reduced-motion:reduce){.a2hs-arrow{animation:none}}
 /* iPhone install steps: Open in Safari / Copy link */
 .al-ios-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
 .al-ios-actions .btn{min-width:130px;text-decoration:none}
@@ -13063,8 +13076,18 @@ function alIosStepsHtml(){
       '<a class="btn primary" href="x-safari-' + escapeAttr(appUrl) + '">Open in Safari</a>' +
       '<button type="button" class="btn" data-copy-link="' + escapeAttr(appUrl) + '">Copy link</button></div>';
   if(b === "safari"){
-    return '<ol class="al-steps"><li>Tap <b>Share</b> ' + AL_IOS_SHARE + ' at the bottom of Safari</li>' +
-      '<li>Scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b></li>' + AL_LAST_STEP + '</ol>' +
+    /* picture guide of the three taps */
+    var guide = '<div class="a2hs-guide" aria-hidden="true">' +
+        '<div class="a2hs-step"><span class="a2hs-ic">⬆︎</span><span>Share</span></div><i>›</i>' +
+        '<div class="a2hs-step"><span class="a2hs-ic">⊞</span><span>Add to Home Screen</span></div><i>›</i>' +
+        '<div class="a2hs-step"><span class="a2hs-ic a2hs-add">Add</span><span>top right</span></div></div>';
+    /* TEST: the iPhone share menu opened by a website. Keep it only if it lists "Add to Home Screen". */
+    var testShare = navigator.share
+      ? '<p class="al-ios-note">Test: <button type="button" class="btn small" data-a2hs-share="1">Open share menu</button> — if it shows <b>Add to Home Screen</b>, tap it.</p>'
+      : '';
+    return guide +
+      '<ol class="al-steps"><li>Tap Safari\'s own <b>Share</b> ' + AL_IOS_SHARE + ' button — bottom middle of the screen (on the newest iPhones: <b>⋯</b> → <b>Share</b>)</li>' +
+      '<li>Scroll down, tap <b>Add to Home Screen</b>, then <b>Add</b></li>' + AL_LAST_STEP + '</ol>' + testShare +
       '<p class="al-ios-note">No <b>Add to Home Screen</b> in the list? You are in another app\'s viewer: tap the <b>Safari / compass</b> icon at the bottom to open SGM in Safari first.</p>';
   }
   if(b === "chrome" || b === "edge" || b === "firefox"){
@@ -13078,6 +13101,24 @@ function alIosStepsHtml(){
     buttons +
     '<ol class="al-steps"><li>If <b>Open in Safari</b> does nothing: tap <b>Copy link</b>, open <b>Safari</b>, paste the link in the address bar</li>' +
     '<li>In Safari tap <b>Share</b> ' + AL_IOS_SHARE + ' → <b>Add to Home Screen</b> → <b>Add</b></li>' + AL_LAST_STEP + '</ol>';
+}
+/* Test button: open the iPhone share menu from the page */
+document.addEventListener("click", function(e){
+  var b = e.target.closest && e.target.closest("[data-a2hs-share]");
+  if(!b || !navigator.share) return;
+  navigator.share({ title: "SGM Ops", url: location.href.replace(/#.*$/, "") }).catch(function(){});
+});
+/* Bouncing arrow over Safari's own Share button (iPhone Safari, not opened from the Home Screen) */
+function alShowShareArrow(){
+  if(!(alIsIos() && !alIsStandalone() && alIosBrowser() === "safari")) return;
+  var a = q("a2hsArrow");
+  if(!a){
+    a = document.createElement("div");
+    a.id = "a2hsArrow"; a.className = "a2hs-arrow"; a.setAttribute("role", "status");
+    a.innerHTML = '<div class="a2hs-bubble">Tap <b>Share ⬆︎</b> below, then <b>Add to Home Screen</b><small>Newest iPhones: <b>⋯</b> → <b>Share</b> · tap here to hide</small></div><div class="a2hs-point">⬇</div>';
+    a.addEventListener("click", function(){ a.remove(); });
+    document.body.appendChild(a);
+  }
 }
 /* "Copy link" buttons inside the iPhone steps */
 document.addEventListener("click", function(e){
@@ -13263,7 +13304,11 @@ function alPromptShow(mode){
         : "Get the Sunday cost alerts and the daily missing-entry reminders on this phone.";
       go.textContent = "Turn on alerts"; later.textContent = "Not now";
     }
-    function close(){ m.classList.remove("show"); go.onclick = null; later.onclick = null; resolve(); }
+    function close(){
+      m.classList.remove("show"); go.onclick = null; later.onclick = null;
+      if(mode === "ios") alShowShareArrow();   /* then point at Safari's Share button */
+      resolve();
+    }
     later.onclick = close;
     go.onclick = function(){
       go.disabled = true; msg.textContent = "Waiting for you to tap Allow…";
