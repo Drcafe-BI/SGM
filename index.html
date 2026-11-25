@@ -13252,8 +13252,12 @@ async function renderAlertDevice(){
     title.textContent = "Alerts are on for this device";
     sub.textContent = "You will get a notification every Sunday at 9:00 AM when a cost line goes over its alert level.";
     dev.classList.add("on");
-    offBtn.style.display = "";
-    testBtn.style.display = "";
+    /* Test and Turn off are for admin only: other users must keep alerts on
+       (they receive cost alerts, reminders and hourly follow-ups) */
+    if(currentUser && currentUser.role === "admin"){
+      offBtn.style.display = "";
+      testBtn.style.display = "";
+    }
   } else {
     title.textContent = "Alerts are off on this device";
     sub.textContent = isViewer
