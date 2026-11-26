@@ -434,6 +434,18 @@ main{max-width:100%;margin:0 auto;padding:22px 24px;width:100%}
 .al-ios-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
 .al-ios-actions .btn{min-width:130px;text-decoration:none}
 .al-ios-note{margin:10px 0 0;font-size:12.5px;color:var(--text-muted);line-height:1.5}
+/* Data Quality / Store Scorecard */
+.dq-list{margin:0;padding-left:16px;font-size:12px;line-height:1.5;color:#78350f}
+.sc-note{margin:10px 0 0;font-size:12px;color:var(--text-muted);line-height:1.5}
+.sc-score{display:inline-block;min-width:38px;text-align:center;padding:3px 8px;border-radius:999px;font-weight:800;font-size:13px}
+.sc-score.good{background:var(--success-soft);color:var(--success-600)}
+.sc-score.warn{background:var(--warning-soft);color:var(--accent-600)}
+.sc-score.bad{background:var(--danger-soft);color:var(--danger-600)}
+/* Action pop-up photo preview, photo links */
+.act-preview img{display:block;max-width:100%;max-height:220px;margin-top:8px;border-radius:10px;border:1px solid var(--border)}
+.photo-link{display:inline-block;margin-top:4px;font-size:12px;color:#1d4ed8;text-decoration:none}
+.photo-link:hover{text-decoration:underline}
+.dash-status.esc{background:#ede9fe;color:#6d28d9}
 /* Alert History */
 .ah-summary{margin-top:12px}
 .ah-chips{display:flex;gap:8px;flex-wrap:wrap}
@@ -457,6 +469,8 @@ main{max-width:100%;margin:0 auto;padding:22px 24px;width:100%}
 /* "by …" under the row buttons in the Daily Report */
 .tx-savedby{display:inline-block;margin-left:4px;font-size:10.5px;color:var(--text-subtle);white-space:nowrap}
 .lock-banner{background:#fff7ed;border-color:#fed7aa;color:#7c2d12}
+.autosave-banner{background:#eff6ff;border-color:#bfdbfe;color:#1e3a8a}
+.autosave-banner .draft-ic{background:#1d4ed8}
 .lock-banner .draft-ic{background:#ea580c}
 /* Alert "action taken" */
 .al-ack{font-size:12px;color:#166534;white-space:normal;min-width:180px}
@@ -2704,6 +2718,14 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
         <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
         <span class="nav-tx">Alerts</span>
       </button>
+      <button class="nav-btn" data-view="scorecard" data-roles="admin,am,op" title="Store Scorecard">
+        <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+        <span class="nav-tx">Store Scorecard</span>
+      </button>
+      <button class="nav-btn" data-view="dataquality" data-roles="admin,am,op" title="Data Quality">
+        <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span class="nav-tx">Data Quality</span>
+      </button>
       <button class="nav-btn" data-view="alerthistory" data-roles="admin,am,op" title="Alert History">
         <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
         <span class="nav-tx">Alert History</span>
@@ -2765,6 +2787,8 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
 <div class="draft-banner" id="draftBanner" role="status" style="display:none"></div>
 <!-- Shown to store logins when the picked day is in a closed month -->
 <div class="draft-banner lock-banner" id="lockBanner" role="status" style="display:none"></div>
+<!-- Shown when typing for this day was auto-saved on this device but never submitted -->
+<div class="draft-banner autosave-banner" id="autosaveBanner" role="status" style="display:none"></div>
 
            <div class="entry-layout">
         <div class="entry-main">
@@ -3085,7 +3109,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
           <div class="field" style="min-width:150px"><label for="storeFilterType">Store Type</label><select class="control-input" id="storeFilterType"><option value="">All types</option></select></div>
           <div class="field" style="min-width:190px"><label for="storeFilterAM">Area Manager</label><select class="control-input" id="storeFilterAM"><option value="">All area managers</option></select></div>
           <div class="field" style="min-width:190px"><label for="storeFilterOM">Operation Manager</label><select class="control-input" id="storeFilterOM"><option value="">All operation managers</option></select></div>
-          <div class="field" style="min-width:130px"><label for="storeFilterStatus">Status</label><select class="control-input" id="storeFilterStatus"><option value="">All statuses</option><option>Active</option><option>Inactive</option></select></div>
+          <div class="field" style="min-width:130px"><label for="storeFilterStatus">Status</label><select class="control-input" id="storeFilterStatus"><option value="">All statuses</option><option selected>Active</option><option>Inactive</option></select></div>
           <button class="btn" id="storesClearFilters" type="button">Clear</button>
         </div>
       </div>
@@ -3174,6 +3198,42 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
           <div id="alRuns"></div>
         </div>
       </div>
+    </section>
+
+    <!-- ============ STORE SCORECARD ============
+         One score per store for a month: entries submitted, on time, KPIs on
+         target, cost alerts actioned and data quality. -->
+    <section id="view-scorecard" class="view">
+      <div class="report-shell">
+        <div class="filter-bar">
+          <div class="field" style="min-width:170px"><label for="scMonth">Month</label><input class="control-input" type="month" id="scMonth"></div>
+          <div class="field" style="min-width:190px"><label for="scGroup">Group by</label>
+            <select class="control-input" id="scGroup"><option value="">Rank all stores</option><option value="am">Area Manager</option></select></div>
+          <div class="bar-summary" id="scSummary"></div>
+          <div class="bar-actions">
+            <div class="exp-dd"><button type="button" class="btn exp-btn" aria-haspopup="menu" aria-expanded="false">Export <span class="exp-caret" aria-hidden="true"></span></button><div class="exp-menu" role="menu"><button class="exp-item" role="menuitem" id="scExportBtn" type="button"><span class="exp-ic xl">XLS</span>Excel (.csv)</button></div></div>
+          </div>
+        </div>
+        <p class="sc-note">Score = average of: <b>Entries</b> (days submitted), <b>On time</b> (submitted by 12:00 the next day), <b>KPIs on target</b>, <b>Alerts actioned</b> (latest cost-alert check) and <b>Data quality</b> (entries with no unusual numbers). A part with no data is left out.</p>
+      </div>
+      <div class="table-card"><table class="tx-pro al-table" id="scTable"></table></div>
+    </section>
+
+    <!-- ============ DATA QUALITY ============
+         Every saved entry checked with the same "unusual number" rules as Submit. -->
+    <section id="view-dataquality" class="view">
+      <div class="report-shell">
+        <div class="filter-bar">
+          <div class="field"><label for="dqFrom">From</label><input class="control-input" type="date" id="dqFrom"></div>
+          <div class="field"><label for="dqTo">To</label><input class="control-input" type="date" id="dqTo"></div>
+          <div class="field search-field"><label for="dqSearch">Search</label><input class="control-input" id="dqSearch" type="text" placeholder="Store or issue, e.g. COGS"></div>
+          <div class="bar-actions">
+            <div class="exp-dd"><button type="button" class="btn exp-btn" aria-haspopup="menu" aria-expanded="false">Export <span class="exp-caret" aria-hidden="true"></span></button><div class="exp-menu" role="menu"><button class="exp-item" role="menuitem" id="dqExportBtn" type="button"><span class="exp-ic xl">XLS</span>Excel (.csv)</button></div></div>
+          </div>
+        </div>
+        <div class="ah-summary" id="dqSummary"></div>
+      </div>
+      <div class="table-card"><table class="tx-pro al-table" id="dqTable"></table></div>
     </section>
 
     <!-- ============ ALERT HISTORY ============
@@ -3326,6 +3386,25 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
     <div class="modal-foot" style="justify-content:center">
       <button class="btn" id="alPromptLater" type="button">Not now</button>
       <button class="btn primary" id="alPromptGo" type="button">Turn on alerts</button>
+    </div>
+  </div>
+</div>
+  <!-- ============ MY ACTION FOR A COST ALERT ============ -->
+<div class="modal-backdrop" id="actionModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h3>What action did you take?</h3><button class="modal-x" id="actClose" type="button">×</button></div>
+    <div class="modal-body" style="grid-template-columns:1fr">
+      <div class="field wide"><label for="actNote">Action taken</label>
+        <textarea id="actNote" rows="4" placeholder="e.g. Reduced overtime, moved one barista to the evening shift"></textarea></div>
+      <div class="field wide"><label for="actPhoto">Photo (optional)</label>
+        <input id="actPhoto" type="file" accept="image/*" capture="environment">
+        <div id="actPreview" class="act-preview"></div></div>
+      <div id="actMsg" style="min-height:18px;font-size:12.5px;color:var(--text-muted)"></div>
+      <p style="margin:0;font-size:12px;color:var(--text-subtle)">Your action is saved with the time and added to this store's weekly Action Plan.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="actCancel" type="button">Cancel</button>
+      <button class="btn primary" id="actSave" type="button">Save action</button>
     </div>
   </div>
 </div>
@@ -3608,7 +3687,8 @@ function entryWarnings(rec, c){
   if(n(rec.transactions) > 0 && sales <= 0) w.push("Sales W/O Tax is " + money(sales) + " SAR but there are " + integer(rec.transactions) + " transactions.");
   if(sales <= 0) return w;
   var gross = n(rec.grossSales) - n(rec.voidAmount), taxShare = gross > 0 ? n(rec.taxAmount) / gross * 100 : 0;
-  if(gross > 0 && (taxShare < 10 || taxShare > 16)) w.push("Tax is " + pct(taxShare) + " of gross sales (15% VAT is normally about 13%).");
+  /* stores enter tax at about 9.5–13% of gross depending on what Gross includes, so only clear outliers */
+  if(gross > 0 && (taxShare < 8 || taxShare > 16)) w.push("Tax is " + pct(taxShare) + " of gross sales (15% VAT is normally 10–13%). Check Tax Amount.");
   if(c.employeePct > 35) w.push("Employee Cost is " + pct(c.employeePct) + " of sales (target " + pct(TARGETS.employee) + "). Check the headcounts and overtime hours.");
   if(n(rec.COGS) === 0) w.push("COGS is 0. Enter the day's cost of goods sold.");
   else if(c.COGSPct < 10 || c.COGSPct > 50) w.push("COGS incl. wastage is " + pct(c.COGSPct) + " of sales (usually 20–35%).");
@@ -3616,7 +3696,7 @@ function entryWarnings(rec, c){
   if(n(rec.targetSales) > 0 && Math.abs(c.salesVsTargetPct) > 60) w.push("Sales are " + pct(c.salesVsTargetPct) + " against the target. Check Target Sales and Gross Sales.");
   if(n(rec.transactions) > 0 && (c.at < 5 || c.at > 150)) w.push("Average ticket (AT) is SAR " + at2(c.at) + ". Check Transactions and Gross Sales.");
   if(c.cashVariancePct > 2) w.push("Cash deposited differs from cash sales by SAR " + money(c.cashVariance) + " (" + pct(c.cashVariancePct) + " of sales).");
-  if(Math.abs(c.dcVariance) > 100 && Math.abs(c.dcVariance) > 0.05 * Math.max(c.dcAppTotal, c.dcPosTotal)) w.push("DC App: App and POS differ by SAR " + money(c.dcVariance) + ".");
+  /* DC App App-vs-POS difference is a control figure in the reports, not a typing mistake: not checked here */
   if(c.totalDiscountPct > 15) w.push("Discounts are " + pct(c.totalDiscountPct) + " of sales.");
   return w;
 }
@@ -4227,6 +4307,7 @@ async function sbLoadRecords(storeIds, fromDate, toDate){
     rec._updatedBy = row.updated_by || null;
     rec._updatedAt = row.updated_at || null;
     rec._createdBy = row.created_by || null;
+    rec._createdAt = row.created_at || null;   /* first submit: used for on-time % */
     rec.storeId = row.store_id;
     rec.date = row.date;
     rec.breakdowns = row.breakdowns || [];
@@ -4397,15 +4478,21 @@ function resolveStoreScope(){
   if(topFilter.storeId){
     return [ normalizeStoreId(topFilter.storeId) ];
   }
-  /* 3) AM filter */
+  /* 3) AM filter — active stores only */
   if(topFilter.areaManagers && topFilter.areaManagers.length){
     var wanted = {};
     topFilter.areaManagers.forEach(function(a){ wanted[a] = true; });
-    return visibleStores
+    return activeVisibleStores()
       .filter(function(s){ return wanted[s.areaManager]; })
       .map(function(s){ return s.id; });
   }
-  return visibleStores.map(function(s){ return s.id; });
+  /* 4) Nothing picked: all ACTIVE stores. Inactive stores only appear in reports
+        when picked in the Store picker (or on the Stores page). */
+  return activeVisibleStores().map(function(s){ return s.id; });
+}
+function activeVisibleStores(){
+  var act = visibleStores.filter(function(s){ return (s.status || "Active") === "Active"; });
+  return act.length ? act : visibleStores.slice();   /* a store login on an inactive store still sees it */
 }
 
 /* Human-readable label of the current scope */
@@ -4418,7 +4505,7 @@ function scopeLabel(){
   if(topFilter.areaManagers && topFilter.areaManagers.length){
     return topFilter.areaManagers.join(", ") + " (" + resolveStoreScope().length + " stores)";
   }
-  return "All visible stores (" + visibleStores.length + ")";
+  return "All active stores (" + activeVisibleStores().length + ")";
 }
 
 /* Pull records for many stores in a date range */
@@ -4869,6 +4956,9 @@ else              colCount = 5;
     host.appendChild(sec);
   });
 
+  /* Auto-save what is typed (this browser), a few seconds after each change */
+  host.addEventListener("input", autosaveSoon);
+  host.addEventListener("change", autosaveSoon);
   /* Attach recalculation listeners once */
   host.addEventListener("input", recalcAllCalcFields);
   host.addEventListener("change", recalcAllCalcFields);
@@ -5261,6 +5351,77 @@ function markDirty(){
     dirty = true;
     updateEntryStatus();
   }
+  autosaveSoon();
+}
+
+/* ============================================================
+   AUTO-SAVE (Daily Entry)
+   While someone types, the form is copied to this browser every few seconds
+   (per user, store and day). If the page is closed, the connection drops or the
+   phone restarts before Submit, opening that day again offers to restore it.
+   Removed on Submit, Save draft, Clear or Discard. Kept for 14 days.
+   ============================================================ */
+var autosaveTimer = null;
+function autosaveKey(){ return "sgm_autosave_v1_" + ((currentUser && currentUser.username) || "anon"); }
+function autosaveAll(){ try { return JSON.parse(localStorage.getItem(autosaveKey()) || "{}"); } catch(e){ return {}; } }
+function autosaveWrite(all){
+  var cutoff = Date.now() - 14 * 86400000;
+  Object.keys(all).forEach(function(k){ if(!all[k] || new Date(all[k].at).getTime() < cutoff) delete all[k]; });
+  try { localStorage.setItem(autosaveKey(), JSON.stringify(all)); } catch(ignore){}
+}
+function autosaveSoon(){
+  if(!currentUser || isReadOnlyRole()) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(autosaveNow, 2500);
+}
+function autosaveNow(){
+  if(!currentUser || isReadOnlyRole() || !dirty) return;
+  syncBreakdownsFromDom();
+  var rec = getFormRecord(), data = {};
+  NUMERIC_KEYS.forEach(function(k){ if(rec[k] !== null && rec[k] !== undefined) data[k] = rec[k]; });
+  if(!Object.keys(data).length && !(rec.breakdowns || []).length) return;
+  var all = autosaveAll();
+  all[normalizeStoreId(rec.storeId) + "|" + rec.date] = { data: data, breakdowns: rec.breakdowns || [], qa: qaVisible, at: new Date().toISOString() };
+  autosaveWrite(all);
+}
+function autosaveClear(storeId, date){
+  clearTimeout(autosaveTimer);
+  var all = autosaveAll(); delete all[normalizeStoreId(storeId) + "|" + date]; autosaveWrite(all);
+  var b = q("autosaveBanner"); if(b) b.style.display = "none";
+}
+/* After a day is loaded: offer typing that was never submitted */
+function offerAutosave(found, dateIso){
+  var b = q("autosaveBanner");
+  if(!b) return;
+  b.style.display = "none";
+  if(!currentUser || isReadOnlyRole()) return;
+  var key = normalizeStoreId(state.selectedStore) + "|" + dateIso, saved = autosaveAll()[key];
+  if(!saved) return;
+  var savedAt = new Date(saved.at).getTime();
+  var lastServer = found && found._updatedAt ? new Date(found._updatedAt).getTime() : 0;
+  if(lastServer && lastServer >= savedAt){ autosaveClear(state.selectedStore, dateIso); return; }   /* already submitted later */
+  b.style.display = "";
+  b.innerHTML = '<span class="draft-ic" aria-hidden="true">↺</span><div class="draft-text"><strong>Unsaved typing found for this day</strong>' +
+    '<span>Typed ' + escapeHtml(whenText(saved.at)) + ' on this device but not submitted.</span></div>' +
+    '<button type="button" class="btn small primary" id="autosaveRestore">Restore</button>' +
+    '<button type="button" class="btn small" id="autosaveDiscard">Discard</button>';
+  q("autosaveRestore").addEventListener("click", function(){
+    REQUIRED_FIELDS.forEach(function(f){
+      var el = q("f-" + f.key);
+      if(el){ el.value = saved.data[f.key] != null ? saved.data[f.key] : ""; updateFieldClass(el); }
+    });
+    setQaVisible(!!saved.qa || hasQaValue(saved.data.qaScore));
+    currentBreakdowns = JSON.parse(JSON.stringify(saved.breakdowns || []));
+    renderBreakdowns();
+    dirty = false; markDirty();
+    recalcAllCalcFields(); refreshProgress();
+    b.style.display = "none";
+    showToast("✓ Restored. Submit when it is complete.", "success");
+  });
+  q("autosaveDiscard").addEventListener("click", function(){
+    autosaveClear(state.selectedStore, dateIso);
+    showToast("Unsaved typing discarded.");
+  });
 }
 function countRequiredFilled(){
   var filled = 0;
@@ -5894,6 +6055,7 @@ async function loadDailyRecord(){
   updateTopSubmitBtn();
   renderDraftBanner();
   renderEntryMeta(fromDraft ? null : found, wanted);
+  offerAutosave(fromDraft ? null : found, wanted);
 }
 
 /* Under the Daily Entry title: who last saved this day. Store logins also get
@@ -6068,6 +6230,7 @@ async function saveDraft(){
     var data = {};
     NUMERIC_KEYS.forEach(function(k){ if(rec[k] !== null && rec[k] !== undefined) data[k] = rec[k]; });
     currentDraft = await draftWrite({ storeId: rec.storeId, date: rec.date, data: data, breakdowns: rec.breakdowns || [] });
+    autosaveClear(rec.storeId, rec.date);
     dirty = false;
     updateEntryStatus("draft");
     renderDraftBanner();
@@ -6372,6 +6535,7 @@ function closeConfirmModal(){
   rec._updatedBy = currentUser ? currentUser.id : null;
   rec._updatedAt = new Date().toISOString();
   renderEntryMeta(rec, rec.date);
+  autosaveClear(rec.storeId, rec.date);   /* submitted: the auto-saved copy is no longer needed */
 
   /* The draft for this store and day is now submitted, so remove it */
   if(draftMatches(rec.storeId, rec.date)){
@@ -6460,6 +6624,7 @@ function closeConfirmModal(){
     return;
   }
 
+  autosaveClear(storeId, dateVal);
   /* Remove from memory */
   var idx = state.records.findIndex(function(r){
     return normalizeStoreId(r.storeId) === storeId && r.date === dateVal;
@@ -12593,6 +12758,8 @@ function refreshCurrentView(){
   if(name==="users"){ reloadProfiles().then(renderUsers); }
   if(name==="alerts") renderAlerts().catch(function(e){ console.error(e); });
   if(name==="alerthistory") renderAlertHistory().catch(function(e){ console.error(e); });
+  if(name==="dataquality") renderDataQuality();
+  if(name==="scorecard") renderScorecard().catch(function(e){ console.error(e); });
 
   /* Reports work from records loaded in memory. If those are more than a few
      minutes old, fetch them again and redraw, so other users' entries show up. */
@@ -13470,7 +13637,11 @@ async function renderAlertTable(previewResult){
       rows = aRes.data || [];
       /* each person's receipt: seen / action taken (only rows this user may read) */
       var rcRes = await sb.from("alert_receipts")
-        .select("id,alert_id,user_id,username,seen_at,action_note,action_at,notify_count").eq("run_id", run.id);
+        .select("id,alert_id,user_id,username,seen_at,action_note,action_at,notify_count,photo_path").eq("run_id", run.id);
+      if(rcRes.error && /photo_path/i.test(rcRes.error.message || "")){   /* before SQL 07 */
+        rcRes = await sb.from("alert_receipts")
+          .select("id,alert_id,user_id,username,seen_at,action_note,action_at,notify_count").eq("run_id", run.id);
+      }
       if(!rcRes.error){
         receiptsByAlert = {};
         (rcRes.data || []).forEach(function(x){ (receiptsByAlert[x.alert_id] = receiptsByAlert[x.alert_id] || []).push(x); });
@@ -13506,6 +13677,7 @@ async function renderAlertTable(previewResult){
     var html = '<td class="al-ack" style="text-align:left">';
     if(mine && mine.action_at){
       html += '✓ ' + escapeHtml(mine.action_note) + '<small>you · ' + escapeHtml(whenText(mine.action_at)) + '</small>' +
+        (mine.photo_path ? '<a href="#" class="photo-link" data-photo="' + escapeAttr(mine.photo_path) + '">📷 View photo</a><br>' : '') +
         '<button type="button" class="row-btn al-my-btn" data-rid="' + mine.id + '" data-note="' + escapeAttr(mine.action_note) + '" style="margin-top:4px">Edit</button>';
     } else if(mine){
       html += '<button type="button" class="row-btn al-my-btn al-my-pending" data-rid="' + mine.id + '">Add my action</button>';
@@ -13556,17 +13728,77 @@ async function renderAlertTable(previewResult){
   });
 }
 
-/* Save the signed-in person's action for one alert (recorded with time in alert_action_log) */
-async function submitMyAlertAction(receiptId, current){
-  var note = window.prompt("What action did you take for this alert?", current || "");
-  if(note === null) return;
-  if(!note.trim()){ showToast("Please write what action was taken."); return; }
-  var res = await sb.rpc("sgm_submit_alert_action", { p_receipt_id: Number(receiptId), p_note: note.trim() });
-  if(res.error){ showToast("Could not save: " + res.error.message); return; }
-  showToast("✓ Your action is saved.", "success");
-  renderAlertTable();
-  if(document.querySelector('.nav-btn.active[data-view="alerthistory"]')) renderAlertHistory();
+/* Save the signed-in person's action for one alert: a note and (optionally) a photo.
+   Recorded with time in alert_action_log, and added to the store's weekly Action Plan (SQL 07). */
+function submitMyAlertAction(receiptId, current){
+  var m = q("actionModal"), note = q("actNote"), file = q("actPhoto"), prev = q("actPreview"), msg = q("actMsg"), save = q("actSave");
+  note.value = current || ""; file.value = ""; prev.innerHTML = ""; msg.textContent = ""; save.disabled = false;
+  m.dataset.rid = receiptId;
+  m.classList.add("show");
+  setTimeout(function(){ note.focus(); }, 50);
 }
+/* Shrink a photo before upload (max 1280 px, JPEG) so it is quick on mobile data */
+function shrinkPhoto(fileObj){
+  return new Promise(function(resolve, reject){
+    var img = new Image(), url = URL.createObjectURL(fileObj);
+    img.onload = function(){
+      var max = 1280, w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+      var c = document.createElement("canvas"); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      c.toBlob(function(b){ b ? resolve(b) : reject(new Error("Could not read the photo.")); }, "image/jpeg", 0.75);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error("This file is not a photo.")); };
+    img.src = url;
+  });
+}
+async function saveMyAlertAction(){
+  var m = q("actionModal"), note = (q("actNote").value || "").trim(), fileObj = q("actPhoto").files[0], msg = q("actMsg"), save = q("actSave");
+  if(!note){ msg.textContent = "Please write what action was taken."; return; }
+  save.disabled = true;
+  try {
+    var photoPath = null;
+    if(fileObj){
+      msg.textContent = "Uploading photo…";
+      var blob = await shrinkPhoto(fileObj);
+      photoPath = currentUser.id + "/" + m.dataset.rid + "-" + Date.now() + ".jpg";
+      var up = await sb.storage.from("alert-photos").upload(photoPath, blob, { contentType: "image/jpeg", upsert: false });
+      if(up.error) throw new Error(/bucket|not found/i.test(up.error.message || "") ? "Photos are not set up yet (run SQL 07)." : up.error.message);
+    }
+    msg.textContent = "Saving…";
+    var args = { p_receipt_id: Number(m.dataset.rid), p_note: note };
+    if(photoPath) args.p_photo = photoPath;
+    var res = await sb.rpc("sgm_submit_alert_action", args);
+    if(res.error) throw res.error;
+    m.classList.remove("show");
+    showToast("✓ Your action is saved" + (photoPath ? " with the photo" : "") + " and added to the weekly Action Plan.", "success");
+    renderAlertTable();
+    if(document.querySelector('.nav-btn.active[data-view="alerthistory"]')) renderAlertHistory();
+  } catch(e){
+    msg.textContent = "Could not save: " + (e.message || e);
+    save.disabled = false;
+  }
+}
+/* Open a stored photo (private: a link valid for 5 minutes) */
+async function openAlertPhoto(path){
+  var r = await sb.storage.from("alert-photos").createSignedUrl(path, 300);
+  if(r.error){ showToast("Could not open the photo: " + r.error.message); return; }
+  window.open(r.data.signedUrl, "_blank");
+}
+(function bindActionModal(){
+  var m = q("actionModal"); if(!m) return;
+  q("actCancel").addEventListener("click", function(){ m.classList.remove("show"); });
+  q("actClose").addEventListener("click", function(){ m.classList.remove("show"); });
+  q("actSave").addEventListener("click", function(){ saveMyAlertAction(); });
+  q("actPhoto").addEventListener("change", function(){
+    var f = q("actPhoto").files[0], prev = q("actPreview");
+    prev.innerHTML = f ? '<img alt="Photo to attach" src="' + URL.createObjectURL(f) + '">' : "";
+  });
+  document.addEventListener("click", function(e){
+    var b = e.target.closest && e.target.closest("[data-photo]");
+    if(b){ e.preventDefault(); openAlertPhoto(b.getAttribute("data-photo")); }
+  });
+})();
 
 /* Opening Alerts (or tapping a notification) counts as having seen your alerts */
 function markMyAlertsSeen(){
@@ -13792,6 +14024,187 @@ async function alertsRunCheck(dryRun){
 }
 
 /* ============================================================
+   DATA QUALITY — every saved entry checked with the Submit warnings
+   ============================================================ */
+var dqRows = [];
+function renderDataQuality(){
+  var table = q("dqTable"), sum = q("dqSummary");
+  if(!table) return;
+  if(!q("dqFrom").value) q("dqFrom").value = currentMonthIso() + "-01";
+  if(!q("dqTo").value) q("dqTo").value = todayIso();
+  var from = q("dqFrom").value, to = q("dqTo").value, term = (q("dqSearch").value || "").trim().toLowerCase();
+  needRecordsFrom(from, renderDataQuality);
+  var info = {}; state.stores.forEach(function(s){ info[s.id] = s; });
+  var recs = recordsBetweenStores(resolveStoreScope(), from, to);
+  var checked = recs.length, byStore = {};
+  var rows = [];
+  recs.forEach(function(r){
+    var w = entryWarnings(r, calculate(r));
+    var sid = normalizeStoreId(r.storeId);
+    var bs = byStore[sid] || (byStore[sid] = { entries:0, flagged:0 });
+    bs.entries++;
+    if(!w.length) return;
+    bs.flagged++;
+    var row = { r:r, store:sid, warnings:w, am:(info[sid] || {}).areaManager || "" };
+    if(term && (sid + " " + row.am + " " + w.join(" ")).toLowerCase().indexOf(term) < 0) return;
+    rows.push(row);
+  });
+  rows.sort(function(a, b){ return (b.warnings.length - a.warnings.length) || b.r.date.localeCompare(a.r.date) || a.store.localeCompare(b.store); });
+  dqRows = rows;
+  var flagged = Object.keys(byStore).reduce(function(t, k){ return t + byStore[k].flagged; }, 0);
+  var worst = Object.keys(byStore).filter(function(k){ return byStore[k].flagged; })
+    .sort(function(a, b){ return byStore[b].flagged - byStore[a].flagged; });
+  sum.innerHTML = '<div class="ah-chips"><span class="pill">' + checked + ' entries checked</span>' +
+    '<span class="pill ' + (flagged ? 'warn' : 'ok') + '">' + flagged + ' with unusual numbers' + (checked ? ' (' + Math.round(flagged / checked * 100) + '%)' : '') + '</span>' +
+    '<span class="pill ok">' + (checked - flagged) + ' look fine</span></div>' +
+    (worst.length ? '<div class="ah-people">' + worst.map(function(k){
+      var b = byStore[k];
+      return '<span class="ah-person ' + (b.flagged / b.entries > 0.3 ? 'err' : 'warn') + '"><b>' + escapeHtml(k) + '</b> ' + b.flagged + ' of ' + b.entries + ' entries</span>';
+    }).join("") + '</div>' : '');
+  var thead = '<thead><tr class="tx-cols"><th style="text-align:left">Date</th><th style="text-align:left">Store</th><th style="text-align:left">Area Manager</th>' +
+    '<th style="text-align:left">Check these numbers</th><th style="text-align:left">Saved by</th><th style="text-align:left">Fix</th></tr></thead>';
+  if(!rows.length){
+    table.innerHTML = thead + '<tbody><tr><td colspan="6" class="empty">' + (checked ? 'No unusual numbers in this period. ✓' : 'No saved entries in this period.') + '</td></tr></tbody>';
+    return;
+  }
+  var canFix = !isReadOnlyRole();
+  table.innerHTML = thead + '<tbody>' + rows.map(function(o){
+    return '<tr>' +
+      '<td style="text-align:left">' + escapeHtml(dateLabel(o.r.date)) + '</td>' +
+      '<td style="text-align:left"><span class="tx-store-chip">' + escapeHtml(o.store) + '</span></td>' +
+      '<td style="text-align:left">' + escapeHtml(o.am || "—") + '</td>' +
+      '<td style="text-align:left;white-space:normal;min-width:320px"><ul class="dq-list">' + o.warnings.map(function(w){ return '<li>' + escapeHtml(w) + '</li>'; }).join("") + '</ul></td>' +
+      '<td style="text-align:left">' + escapeHtml(o.r._updatedBy ? userNameById(o.r._updatedBy) : "—") + '</td>' +
+      '<td class="tx-actions">' + (canFix ? '<button class="row-btn tx-load" type="button" data-date="' + escapeAttr(o.r.date) + '" data-store="' + escapeAttr(o.store) + '">Open</button>' : '') + '</td>' +
+    '</tr>';
+  }).join("") + '</tbody>';
+  bindTxRowActions(table);
+}
+function exportDataQualityCsv(){
+  if(!dqRows.length){ showToast("Nothing to export."); return; }
+  var out = [["Date","Store","Area Manager","Issues","Saved by"]];
+  dqRows.forEach(function(o){ out.push([o.r.date, o.store, o.am, o.warnings.join(" | "), o.r._updatedBy ? userNameById(o.r._updatedBy) : ""]); });
+  download("SGM_Data_Quality_" + q("dqFrom").value + "_to_" + q("dqTo").value + ".csv",
+    "﻿" + out.map(function(r){ return r.map(csvEscape).join(","); }).join("\r\n"), "text/csv;charset=utf-8");
+  showToast("CSV downloaded.", "success");
+}
+
+/* ============================================================
+   STORE SCORECARD — one score per store for a month
+   ============================================================ */
+var scRows = [];
+function scOnTime(rec){
+  if(!rec._createdAt) return null;
+  var deadline = parseDate(addDays(rec.date, 1)); deadline.setHours(12, 0, 0, 0);   /* 12:00 the next day */
+  return new Date(rec._createdAt) <= deadline;
+}
+async function renderScorecard(){
+  var table = q("scTable"), sum = q("scSummary");
+  if(!table) return;
+  if(!q("scMonth").value) q("scMonth").value = currentMonthIso();
+  var mv = q("scMonth").value, start = mv + "-01";
+  var last = parseDate(start); last.setMonth(last.getMonth() + 1); last.setDate(0);
+  var end = isoDate(last), yesterday = addDays(todayIso(), -1);
+  var upto = end < yesterday ? end : yesterday;                       /* days that should have an entry */
+  needRecordsFrom(start, function(){ renderScorecard(); });
+  var daysDue = upto >= start ? Math.round((parseDate(upto) - parseDate(start)) / 86400000) + 1 : 0;
+
+  /* cost alerts of the latest check, per store */
+  var alertsBy = {};
+  try {
+    var run = await sb.from("alert_runs").select("id").order("id", { ascending:false }).limit(1);
+    if(!run.error && run.data && run.data.length){
+      var rc = await sb.from("alert_receipts").select("action_at,cost_alerts(store_id)").eq("run_id", run.data[0].id);
+      (rc.data || []).forEach(function(x){
+        var sid = x.cost_alerts ? normalizeStoreId(x.cost_alerts.store_id) : null; if(!sid) return;
+        var a = alertsBy[sid] || (alertsBy[sid] = { total:0, done:0 }); a.total++; if(x.action_at) a.done++;
+      });
+    }
+  } catch(ignore){}
+
+  var ids = resolveStoreScope(), info = {};
+  state.stores.forEach(function(s){ info[s.id] = s; });
+  function part(v){ return v == null ? null : Math.max(0, Math.min(100, v)); }
+  scRows = ids.map(function(sid){
+    var recs = recordsBetweenStores([sid], start, end);
+    var due = recs.filter(function(r){ return r.date <= upto; });
+    var entries = daysDue ? part(due.length / daysDue * 100) : null;
+    var timed = recs.map(scOnTime).filter(function(x){ return x !== null; });
+    var onTime = timed.length ? part(timed.filter(Boolean).length / timed.length * 100) : null;
+    var kpi = null;
+    if(recs.length){
+      var agg = aggregate(recs), c = agg._calc, good = 0, total = 0;
+      KPI_DEFS.forEach(function(k){
+        if(k.target == null || k.key === "COGSPct") return;
+        if(k.key === "qaScore" && !c.qaEntered) return;
+        var t = k.key === "salesWithoutTax" ? n(agg.targetSales) : k.key === "adt" ? n(agg.targetAdt) : k.key === "at" ? n(agg.targetAt) : k.target;
+        if(!t) return;
+        total++; if(statusClass(n(c[k.key]), t, !!k.lower) === "good") good++;
+      });
+      kpi = total ? part(good / total * 100) : null;
+    }
+    var al = alertsBy[sid], alerts = al && al.total ? part(al.done / al.total * 100) : null;
+    var quality = recs.length ? part(recs.filter(function(r){ return !entryWarnings(r, calculate(r)).length; }).length / recs.length * 100) : null;
+    var partsArr = [entries, onTime, kpi, alerts, quality].filter(function(v){ return v !== null; });
+    var score = partsArr.length ? Math.round(partsArr.reduce(function(t, v){ return t + v; }, 0) / partsArr.length) : null;
+    return { store:sid, am:(info[sid] || {}).areaManager || "—", entries:entries, entriesN:due.length, onTime:onTime, kpi:kpi, alerts:alerts,
+             alertsTxt: al ? al.done + "/" + al.total : "", quality:quality, score:score };
+  });
+  scRows.sort(function(a, b){ return (n(b.score) - n(a.score)) || a.store.localeCompare(b.store); });
+
+  var scored = scRows.filter(function(r){ return r.score !== null; });
+  var avg = scored.length ? Math.round(scored.reduce(function(t, r){ return t + r.score; }, 0) / scored.length) : null;
+  sum.textContent = scRows.length + " stores · average score " + (avg === null ? "—" : avg) + " · " + daysDue + " day" + (daysDue === 1 ? "" : "s") + " due in " + mv;
+
+  function cell(v, extra){
+    if(v === null) return '<td class="num" style="color:var(--text-subtle)">—</td>';
+    var cls = v >= 90 ? "good" : (v >= 70 ? "warn" : "bad");
+    return '<td class="num ' + cls + '"><span class="tx-cell">' + (cls !== "good" ? '<i class="rpt-dot ' + cls + '"></i>' : '') + Math.round(v) + '%' + (extra ? ' <small class="ah-sub" style="display:inline">' + escapeHtml(extra) + '</small>' : '') + '</span></td>';
+  }
+  var thead = '<thead><tr class="tx-cols"><th style="text-align:left">#</th><th style="text-align:left">Store</th><th style="text-align:left">Area Manager</th>' +
+    '<th>Score</th><th>Entries</th><th>On time</th><th>KPIs on target</th><th>Alerts actioned</th><th>Data quality</th></tr></thead>';
+  function rowHtml(r, i){
+    var sc = r.score === null ? '—' : '<span class="sc-score ' + (r.score >= 85 ? "good" : r.score >= 65 ? "warn" : "bad") + '">' + r.score + '</span>';
+    return '<tr><td style="text-align:left">' + (i + 1) + '</td>' +
+      '<td style="text-align:left"><span class="tx-store-chip">' + escapeHtml(r.store) + '</span></td>' +
+      '<td style="text-align:left">' + escapeHtml(r.am) + '</td>' +
+      '<td>' + sc + '</td>' + cell(r.entries, r.entriesN + "/" + daysDue) + cell(r.onTime) + cell(r.kpi) + cell(r.alerts, r.alertsTxt) + cell(r.quality) + '</tr>';
+  }
+  var body = "";
+  if(q("scGroup").value === "am"){
+    var groups = {};
+    scRows.forEach(function(r){ (groups[r.am] = groups[r.am] || []).push(r); });
+    Object.keys(groups).map(function(am){
+      var g = groups[am].filter(function(r){ return r.score !== null; });
+      return { am:am, rows:groups[am], avg: g.length ? Math.round(g.reduce(function(t, r){ return t + r.score; }, 0) / g.length) : -1 };
+    }).sort(function(a, b){ return b.avg - a.avg; }).forEach(function(g){
+      body += '<tr class="rpt-cat"><td colspan="9" style="text-align:left;background:var(--rpt-band);color:var(--rpt-band-ink);font-weight:800">' +
+        escapeHtml(g.am) + ' · average ' + (g.avg < 0 ? "—" : g.avg) + ' · ' + g.rows.length + ' store' + (g.rows.length === 1 ? '' : 's') + '</td></tr>';
+      g.rows.forEach(function(r, i){ body += rowHtml(r, i); });
+    });
+  } else {
+    scRows.forEach(function(r, i){ body += rowHtml(r, i); });
+  }
+  table.innerHTML = thead + '<tbody>' + (body || '<tr><td colspan="9" class="empty">No stores in view.</td></tr>') + '</tbody>';
+}
+function exportScorecardCsv(){
+  if(!scRows.length){ showToast("Nothing to export."); return; }
+  var out = [["Store","Area Manager","Score","Entries %","Entries","On time %","KPIs on target %","Alerts actioned %","Alerts done/total","Data quality %"]];
+  scRows.forEach(function(r){ out.push([r.store, r.am, r.score, r.entries == null ? "" : Math.round(r.entries), r.entriesN, r.onTime == null ? "" : Math.round(r.onTime),
+    r.kpi == null ? "" : Math.round(r.kpi), r.alerts == null ? "" : Math.round(r.alerts), r.alertsTxt, r.quality == null ? "" : Math.round(r.quality)]); });
+  download("SGM_Store_Scorecard_" + q("scMonth").value + ".csv",
+    "﻿" + out.map(function(r){ return r.map(csvEscape).join(","); }).join("\r\n"), "text/csv;charset=utf-8");
+  showToast("CSV downloaded.", "success");
+}
+(function bindQualityAndScorecard(){
+  ["dqFrom","dqTo"].forEach(function(id){ var el = q(id); if(el) el.addEventListener("change", renderDataQuality); });
+  var s = q("dqSearch"); if(s) s.addEventListener("input", renderDataQuality);
+  var e1 = q("dqExportBtn"); if(e1) e1.addEventListener("click", exportDataQualityCsv);
+  ["scMonth","scGroup"].forEach(function(id){ var el = q(id); if(el) el.addEventListener("change", function(){ renderScorecard(); }); });
+  var e2 = q("scExportBtn"); if(e2) e2.addEventListener("click", exportScorecardCsv);
+})();
+
+/* ============================================================
    ALERT HISTORY — per check: who was notified, seen, pending, actions
    ============================================================ */
 var ahRows = [];          /* the rows on screen, for the CSV export */
@@ -13811,9 +14224,11 @@ async function renderAlertHistory(){
   table.innerHTML = '<tbody><tr><td class="empty">Loading…</td></tr></tbody>';
 
   /* 2) receipts of that check + the alert details + every action submitted */
-  var rc = await sb.from("alert_receipts")
-    .select("id,alert_id,user_id,username,created_at,last_notified_at,notify_count,seen_at,action_note,action_at,cost_alerts(store_id,cost_label,level,actual_pct,target_pct)")
-    .eq("run_id", runId).order("alert_id");
+  var baseCols = "id,alert_id,user_id,username,created_at,last_notified_at,notify_count,seen_at,action_note,action_at,cost_alerts(store_id,cost_label,level,actual_pct,target_pct)";
+  var rc = await sb.from("alert_receipts").select(baseCols + ",escalated_at,photo_path").eq("run_id", runId).order("alert_id");
+  if(rc.error && /escalated_at|photo_path/i.test(rc.error.message || "")){   /* before SQL 07 */
+    rc = await sb.from("alert_receipts").select(baseCols).eq("run_id", runId).order("alert_id");
+  }
   if(rc.error){
     table.innerHTML = '<tbody><tr><td class="empty">' + (/alert_receipts|does not exist|schema cache/i.test(rc.error.message || "")
       ? "Alert history is not set up yet: run 05_SGM_alert_receipts_actions.sql in Supabase." : escapeHtml(rc.error.message)) + '</td></tr></tbody>';
@@ -13822,7 +14237,8 @@ async function renderAlertHistory(){
   var ids = (rc.data || []).map(function(x){ return x.id; });
   var logs = {};
   if(ids.length){
-    var lg = await sb.from("alert_action_log").select("receipt_id,note,created_at").in("receipt_id", ids).order("created_at");
+    var lg = await sb.from("alert_action_log").select("receipt_id,note,created_at,photo_path").in("receipt_id", ids).order("created_at");
+    if(lg.error) lg = await sb.from("alert_action_log").select("receipt_id,note,created_at").in("receipt_id", ids).order("created_at");
     (lg.data || []).forEach(function(l){ (logs[l.receipt_id] = logs[l.receipt_id] || []).push(l); });
   }
   var names = {};
@@ -13875,12 +14291,12 @@ async function renderAlertHistory(){
     '<th style="text-align:left">Action taken</th><th style="text-align:left">History</th></tr></thead>';
   if(!rows.length){ table.innerHTML = thead + '<tbody><tr><td colspan="9" class="empty">Nothing matches.</td></tr></tbody>'; return; }
   var body = rows.map(function(o){
-    var r = o.r, st = r.action_at ? '<span class="dash-status good">Done</span>'
-      : (r.seen_at ? '<span class="dash-status warn">Pending</span>' : '<span class="dash-status bad">Not seen</span>');
+    var r = o.r, st = (r.escalated_at && !r.action_at ? '<span class="dash-status esc" title="Escalated ' + escapeAttr(whenText(r.escalated_at)) + '">Escalated</span> ' : '') + (r.action_at ? '<span class="dash-status good">Done</span>'
+      : (r.seen_at ? '<span class="dash-status warn">Pending</span>' : '<span class="dash-status bad">Not seen</span>'));
     var mine = currentUser && r.user_id === currentUser.id;
     var hist = o.log.length
       ? '<details class="ah-hist"><summary>' + o.log.length + ' entr' + (o.log.length === 1 ? 'y' : 'ies') + '</summary><ul>' +
-          o.log.slice().reverse().map(function(l){ return '<li><small>' + escapeHtml(whenText(l.created_at)) + '</small> ' + escapeHtml(l.note) + '</li>'; }).join("") +
+          o.log.slice().reverse().map(function(l){ return '<li><small>' + escapeHtml(whenText(l.created_at)) + '</small> ' + escapeHtml(l.note) + (l.photo_path ? ' <a href="#" class="photo-link" data-photo="' + escapeAttr(l.photo_path) + '">📷 photo</a>' : '') + '</li>'; }).join("") +
         '</ul></details>'
       : '<span style="color:var(--text-subtle)">—</span>';
     return '<tr>' +
@@ -13892,6 +14308,7 @@ async function renderAlertHistory(){
       '<td style="text-align:left">' + escapeHtml(whenText(r.created_at)) + '<small class="ah-sub">' + r.notify_count + '× · last ' + escapeHtml(whenText(r.last_notified_at)) + '</small></td>' +
       '<td style="text-align:left">' + (r.seen_at ? escapeHtml(whenText(r.seen_at)) : '<span style="color:#b91c1c">Not seen</span>') + '</td>' +
       '<td class="al-ack" style="text-align:left">' + (r.action_at ? escapeHtml(r.action_note) + '<small>' + escapeHtml(whenText(r.action_at)) + '</small>' : '<span style="color:var(--text-subtle)">—</span>') +
+        (r.photo_path ? '<a href="#" class="photo-link" data-photo="' + escapeAttr(r.photo_path) + '">📷 View photo</a>' : '') +
         (mine ? '<button type="button" class="row-btn al-my-btn" data-rid="' + r.id + '" data-note="' + escapeAttr(r.action_note || "") + '" style="margin-top:4px">' + (r.action_at ? 'Edit' : 'Add my action') + '</button>' : '') + '</td>' +
       '<td style="text-align:left">' + hist + '</td>' +
     '</tr>';
