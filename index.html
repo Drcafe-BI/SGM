@@ -2151,6 +2151,7 @@ main{padding-top:18px}
 
 /* ---------- Alerts page ---------- */
 .hidden-by-role{display:none !important}
+.nav-btn.hidden-by-module{display:none !important}
 .al-device{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 auto}
 .al-device-ic{
   flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
@@ -2466,6 +2467,22 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
 .sp-item .sp-meta{color:#64748b;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sp-item.inactive .sp-code::after{content:" (inactive)";font-weight:500;color:#b45309;font-size:11px}
 .sp-empty{padding:10px;color:#64748b;font-size:12.5px;text-align:center}
+/* Module / P&L access (Add / Edit user) */
+.acc-box{border:1px solid #d6deea;border-radius:10px;background:#fff;padding:10px;display:flex;flex-direction:column;gap:8px}
+.acc-all{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin:0;cursor:pointer}
+.acc-all input,.acc-grid input{width:16px;height:16px;margin:0;flex:0 0 auto}
+.acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:4px 10px}
+.acc-grid label{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;margin:0;padding:4px 2px;cursor:pointer}
+.acc-grid.off{opacity:.45;pointer-events:none}
+.acc-pnl{border-top:1px dashed #d6deea;padding-top:8px;display:flex;flex-direction:column;gap:6px}
+.acc-sub{font-size:12px;font-weight:700;color:#1e3a8a}
+.acc-quick{display:flex;flex-wrap:wrap;gap:6px}
+.acc-pnl-list{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));grid-auto-rows:min-content;align-content:start;max-height:240px;overflow:auto}
+.acc-grid label{min-height:28px;flex-shrink:0}
+.acc-grid input[type=checkbox]{width:16px !important;height:16px !important;min-height:16px;padding:0}
+.acc-pnl-list .sl{display:inline-block;min-width:20px;color:#64748b;font-weight:700}
+.acc-pnl-list label.sum{font-weight:700}
+.u-access{font-size:11px;color:#b45309;margin-top:3px;white-space:normal}
 @media (max-width:640px){.sp-list{max-height:46vh}.sp-item{padding:9px 6px}
   .sp-top input[type=search]{flex-basis:100%}
   .sp-count{flex-basis:100%}
@@ -3567,6 +3584,24 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
         </div>
         <small>Tick as many stores as needed. Admin role ignores this.</small>
       </div>
+      <div class="field wide" id="umAccessWrap">
+        <label>Module access</label>
+        <div class="acc-box">
+          <label class="acc-all"><input type="checkbox" id="umModAll"> All modules of this role</label>
+          <div class="acc-grid" id="umModList"></div>
+          <div id="umPnlWrap" class="acc-pnl">
+            <div class="acc-sub">P&amp;L — cost lines this user can see</div>
+            <label class="acc-all"><input type="checkbox" id="umPnlAll"> All P&amp;L lines</label>
+            <div class="acc-quick" id="umPnlQuick">
+              <button type="button" class="btn small" data-pnlset="hr">HR: Sales + Employee cost</button>
+              <button type="button" class="btn small" data-pnlset="cogs">Sales + COGS + Gross margin</button>
+              <button type="button" class="btn small" data-pnlset="none">Clear</button>
+            </div>
+            <div class="acc-grid acc-pnl-list" id="umPnlList"></div>
+          </div>
+        </div>
+        <small>Admin always sees everything. Stores, Users and Backup stay admin-only.</small>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn" id="userModalCancel" type="button">Cancel</button>
@@ -4038,6 +4073,12 @@ function weekNumberOf(saturdayIso){
   }
   return wk;
 }
+/* "2026-09" → "Sep 2026" */
+function monthShortLabel(ym){
+  var p = String(ym || "").slice(0, 7).split("-");
+  var M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return (M[Number(p[1]) - 1] || p[1] || "") + " " + (p[0] || "");
+}
 function weekLabel(saturdayIso){
   return "W" + String(weekNumberOf(saturdayIso)).padStart(2, "0");
 }
@@ -4332,6 +4373,8 @@ async function sbFetchProfile(userId){
     display: data.display_name,
     role: data.role,
     storeIds: data.store_ids || [],
+    modules: Array.isArray(data.modules) ? data.modules : null,
+    pnlLines: Array.isArray(data.pnl_lines) ? data.pnl_lines : null,
     is_active: data.is_active !== false // Defaults to true if null
   };
 }
@@ -4661,7 +4704,9 @@ async function tryStoreLogin(){
       display: profile.display || profile.username,
       storeId: (profile.storeIds && profile.storeIds[0]) || code,
       storeIds: profile.storeIds || [],
-      id: profile.id
+      id: profile.id,
+      modules: profile.modules || null,
+      pnlLines: profile.pnlLines || null
     };
     err.textContent = "";
     await finalizeLogin();
@@ -4700,6 +4745,8 @@ async function tryManagerLogin(){
       display: profile.display || profile.username,
       storeIds: profile.storeIds || [],
       id: profile.id,
+      modules: profile.modules || null,
+      pnlLines: profile.pnlLines || null,
       /* A store account signing in on this tab works like the Store tab */
       storeId: profile.role === "store" ? ((profile.storeIds && profile.storeIds[0]) || null) : null
     };
@@ -4806,6 +4853,8 @@ async function restoreSession(){
       display: profile.display || profile.username,
       storeIds: profile.storeIds || [],
       id: profile.id,
+      modules: profile.modules || null,
+      pnlLines: profile.pnlLines || null,
       storeId: (profile.role === "store") ? (profile.storeIds[0] || null) : null
     };
 
@@ -4834,6 +4883,52 @@ async function restoreSession(){
     return false;
   }
 }
+/* ---- Per-user module + P&L line access (profiles.modules / pnl_lines; NULL = everything) ---- */
+var SGM_MODULES = [
+  ["daily","Daily Entry"],["dailyreport","Daily Report"],["weekly","Weekly"],["monthly","Monthly"],
+  ["pnl","P&L"],["dashboard","KPI Dashboard"],["alerts","Alerts"],
+  ["scorecard","Store Scorecard"],["dataquality","Data Quality"],["alerthistory","Alert History"]
+];
+function userCanSee(view, user){
+  user = user || currentUser;
+  if(!user || user.role === "admin") return true;
+  var known = SGM_MODULES.some(function(m){ return m[0] === view; });
+  if(!known || !Array.isArray(user.modules)) return true;
+  return user.modules.indexOf(view) >= 0;
+}
+function firstAllowedView(){
+  var btns = Array.from(document.querySelectorAll(".side-nav .nav-btn[data-view], .nav-btn[data-view]"));
+  for(var i = 0; i < btns.length; i++){
+    var v = btns[i].dataset.view;
+    if(!btns[i].classList.contains("hidden-by-role") && userCanSee(v)) return v;
+  }
+  return "daily";
+}
+function pnlLineLimited(){
+  return !!(currentUser && currentUser.role !== "admin" && Array.isArray(currentUser.pnlLines));
+}
+/* Keeps only the P&L lines this user may see (a copy; the original is untouched) */
+function pnlRestrict(result){
+  if(!result || !pnlLineLimited()) return result;
+  var allow = currentUser.pnlLines.map(Number);
+  var copy = Object.assign({}, result);
+  copy.rows = (result.rows || []).filter(function(r){ return allow.indexOf(Number(r.sl)) >= 0; });
+  copy._limited = true;
+  return copy;
+}
+function applyModuleAccess(){
+  if(!currentUser) return;
+  document.querySelectorAll(".nav-btn[data-view]").forEach(function(b){
+    b.classList.toggle("hidden-by-module", !userCanSee(b.dataset.view));
+  });
+  /* P&L with limited lines: table only (graph and suggestions need every line) */
+  var limited = pnlLineLimited();
+  var tog = q("pnlViewToggle");
+  if(tog) tog.style.display = limited ? "none" : "";
+  if(limited && typeof pnlViewMode !== "undefined") pnlViewMode = "table";
+  var active = document.querySelector(".nav-btn.active");
+  if(active && !userCanSee(active.dataset.view)) switchView(firstAllowedView());
+}
 function applyRoleUi(){
   if(!currentUser) return;
   var roleLabel = currentUser.role === "admin" ? "Admin"
@@ -4853,6 +4948,7 @@ function applyRoleUi(){
     if(allowed.indexOf(currentUser.role) >= 0) b.classList.remove("hidden-by-role");
     else b.classList.add("hidden-by-role");
   });
+  applyModuleAccess();
 
   var isAdmin = currentUser.role === "admin";
   var isViewer = currentUser.role === "viewer" || currentUser.role === "dept";   /* read-only roles */
@@ -7693,8 +7789,8 @@ function renderDashboard(){
 
   var ids = resolveStoreScope();
   var agg = aggregate(recordsBetweenStores(ids, start, end));
-  agg._periodStartLabel = mv;
-  agg._periodEndLabel = mv;
+  agg._periodStartLabel = monthShortLabel(mv);
+  agg._periodEndLabel = monthShortLabel(mv);
     agg._dashStart = start;
   agg._dashEnd = end;
 
@@ -7834,7 +7930,7 @@ function renderReportTable2Col(table, periods, search, countElId, inlineHostId){
 
   var thead = '<thead><tr><th class="rpt-metric">Metric</th>';
   periods.forEach(function(p, pi){
-    var isMonthly = (p.shortLabel.indexOf("W") !== 0);
+    var isMonthly = p.kind ? (p.kind !== "week") : (p.shortLabel.indexOf("W") !== 0);
     var periodType = isMonthly ? "monthly" : "weekly";
     var startDateStr = isMonthly ? p.start : weekStart(p.start);
     var pLabel = p.shortLabel;
@@ -7912,7 +8008,7 @@ function renderReportTable2Col(table, periods, search, countElId, inlineHostId){
   wrap.innerHTML = '<div class="bd-empty" style="margin-top:12px">Loading action plans…</div>';
   var scope = currentScopeDescriptor();
   var promises = periods.map(function(p){
-    var pt = (p.shortLabel.indexOf("W") === 0) ? "week" : "month";
+    var pt = (p.kind ? p.kind === "week" : p.shortLabel.indexOf("W") === 0) ? "week" : "month";
     var startIso = (pt === "week") ? weekStart(p.start) : (p.start.slice(0,7) + "-01");
     return fetchPlanForPeriod(scope, startIso, pt).then(function(plan){
       return { period: p, plan: plan };
@@ -7975,8 +8071,8 @@ function buildWeeklyPeriods(){
       periods.push({
       shortLabel: (mode === "single")
         ? (weekLabel(s) + " · " + dateLabel(s) + " – " + dateLabel(e))
-        : (labels[i] + " · " + weekLabel(s)),
-      start: s, end: e, agg: agg
+        : (weekLabel(s) + " · " + ppShortRange(s, e)),
+      kind: "week", start: s, end: e, agg: agg
     });
   }
   return periods;
@@ -8012,7 +8108,7 @@ function buildMonthlyPeriods(){
       
       periods.push({
         shortLabel: dateLabel(from) + " – " + dateLabel(to),
-        start: from, 
+        kind: "month", start: from,
         end: to, 
         agg: agg
       });
@@ -8034,11 +8130,11 @@ function buildMonthlyPeriods(){
     var end = isoDate(d);
     var ids = resolveStoreScope();
     var agg = aggregate(recordsBetweenStores(ids, start, end));
-    agg._periodStartLabel = mv;
-    agg._periodEndLabel   = mv;
+    agg._periodStartLabel = monthShortLabel(mv);
+    agg._periodEndLabel   = monthShortLabel(mv);
     periods.push({
-      shortLabel: (mode === "single") ? mv : (labels[i]+" ("+mv+")"),
-      start: start, end: end, agg: agg
+      shortLabel: monthShortLabel(mv),
+      kind: "month", start: start, end: end, agg: agg
     });
   }
   return periods;
@@ -8498,7 +8594,7 @@ async function exportPnlCsv(){
   if(!storeId.length){ showToast("Pick a store first."); return; }
   
   var result;
-  try { result = await calculatePnl(storeId, from, to); }
+  try { result = pnlRestrict(await calculatePnl(storeId, from, to)); }
   catch(e){ showToast("Could not load P&L: " + (e.message || "")); return; }
   if(!result.rows.length){ showToast("Nothing to export."); return; }
 
@@ -8605,7 +8701,7 @@ async function exportPnlPdf(){
   if(!storeId.length){ showToast("Pick a store first."); return; }
   
   var result;
-  try { result = await calculatePnl(storeId, from, to); }
+  try { result = pnlRestrict(await calculatePnl(storeId, from, to)); }
   catch(e){ showToast("Could not load P&L: " + (e.message || "")); return; }
   if(!result.rows.length){ showToast("Nothing to export."); return; }
 
@@ -8721,13 +8817,14 @@ async function renderPnl(){
 
   var result;
   pnlLastResult = null;
-  try { result = await calculatePnl(storeId, from, to); }
+  try { result = pnlRestrict(await calculatePnl(storeId, from, to)); }
   catch(e){
     table.innerHTML = '<tbody><tr><td class="empty">Error: ' + escapeHtml(e.message||"") + '</td></tr></tbody>';
     applyPnlView();
     return;
   }
   pnlLastResult = result;
+  if(result && result._limited && rangeChip) rangeChip.textContent += " · " + result.rows.length + " line" + (result.rows.length === 1 ? "" : "s") + " you have access to";
 
   if(chip){
     if(!result.recordCount){
@@ -9694,8 +9791,12 @@ function setupYearMonth(cfg){
 }
 
 function initPeriodPickers(){
-  weekSel = [ weekStart(q("weekDate").value || todayIso()) ];
-  monthSel = [ (q("monthDate").value || currentMonthIso()).slice(0, 7) ];
+  /* Default: the latest 4 weeks (this week and the 3 before) and the latest
+     3 months (this month and the 2 before); the user can change them. */
+  var thisWeek = weekStart(todayIso());
+  weekSel = [0, 1, 2, 3].map(function(i){ return addDays(thisWeek, -7 * i); });
+  var thisMonth = currentMonthIso();
+  monthSel = [0, 1, 2].map(function(i){ return shiftMonth(thisMonth, -i); });
   monthCustom = false;
   syncWeekInputs();
   syncMonthInputs();
@@ -11686,7 +11787,8 @@ function renderUsers(){
       '<td>'+ statusBadge +'</td>'+
       '<td><strong>'+escapeHtml(u.username)+'</strong></td>'+
       '<td style="text-align:left">'+escapeHtml(u.display||u.username)+'</td>'+
-      '<td><span class="role-chip '+roleClass+'">'+roleLabel+'</span></td>'+
+      '<td><span class="role-chip '+roleClass+'">'+roleLabel+'</span>'+
+        (accSummary(u) ? '<div class="u-access">'+escapeHtml(accSummary(u))+'</div>' : '')+'</td>'+
       '<td style="text-align:left;white-space:normal;max-width:360px">'+escapeHtml(scope)+'</td>'+
       '<td>'+
         '<button class="row-btn toggle-user" data-username="'+escapeAttr(u.username)+'" data-active="'+u.is_active+'" type="button">'+toggleBtnText+'</button>'+
@@ -11779,6 +11881,8 @@ async function reloadProfiles(){
         role: p.role,
         storeIds: p.store_ids || [],
         department: p.department || "",
+        modules: Array.isArray(p.modules) ? p.modules : null,
+        pnlLines: Array.isArray(p.pnl_lines) ? p.pnl_lines : null,
         password: "",
         id: p.id,
         is_active: p.is_active !== false 
@@ -11816,6 +11920,7 @@ function openUserModal(username){
   q("umStoreSearch").value = "";
   q("umStoreOnlySel").checked = false;
   spRender();
+  accRender(u);
   /* Department (only for Department Managers): suggestions from the alert rules and other users */
   q("umDepartment").value = (u && u.department) || "";
   var deptSet = {};
@@ -11826,6 +11931,87 @@ function openUserModal(username){
   q("userModal").classList.add("show");
   setTimeout(function(){ q("umUsername").focus(); }, 30);
 }
+/* ---- Module access + P&L line access (Add / Edit user) ---- */
+function accPnlLines(){
+  var out = [];
+  PNL_GUIDE.forEach(function(g){ g.lines.forEach(function(l){ if(typeof l.sl === "number") out.push(l); }); });
+  return out.sort(function(a, b){ return a.sl - b.sl; });
+}
+function accRender(u){
+  var mods = u && Array.isArray(u.modules) ? u.modules : null;
+  var lines = u && Array.isArray(u.pnlLines) ? u.pnlLines.map(Number) : null;
+  q("umModAll").checked = !mods;
+  q("umModList").innerHTML = SGM_MODULES.map(function(m){
+    return '<label><input type="checkbox" data-mod="' + m[0] + '"' + (!mods || mods.indexOf(m[0]) >= 0 ? ' checked' : '') + '> ' + escapeHtml(m[1]) + '</label>';
+  }).join("");
+  q("umPnlAll").checked = !lines;
+  var SUM = { 3:1, 20:1, 21:1, 28:1, 29:1 };
+  q("umPnlList").innerHTML = accPnlLines().map(function(l){
+    return '<label' + (SUM[l.sl] ? ' class="sum"' : '') + '><input type="checkbox" data-sl="' + l.sl + '"' + (!lines || lines.indexOf(l.sl) >= 0 ? ' checked' : '') + '> <span class="sl">' + l.sl + '</span>' + escapeHtml(l.name) + '</label>';
+  }).join("");
+  accSync();
+}
+function accSync(){
+  var role = q("umRole").value;
+  q("umAccessWrap").style.display = role === "admin" ? "none" : "";
+  var allMods = q("umModAll").checked;
+  q("umModList").classList.toggle("off", allMods);
+  var pnlCb = q("umModList").querySelector('input[data-mod="pnl"]');
+  var pnlOn = allMods || (pnlCb && pnlCb.checked);
+  q("umPnlWrap").style.display = pnlOn ? "" : "none";
+  var allLines = q("umPnlAll").checked;
+  q("umPnlList").classList.toggle("off", allLines);
+  q("umPnlQuick").classList.toggle("off", allLines);
+  q("umPnlQuick").style.display = allLines ? "none" : "";
+}
+/* Returns { modules, pnl_lines } or null (after a message) when the choice is not valid */
+function accCollect(){
+  if(q("umRole").value === "admin") return { modules: null, pnl_lines: null };
+  var modules = q("umModAll").checked ? null
+    : Array.from(q("umModList").querySelectorAll("input[data-mod]:checked")).map(function(c){ return c.dataset.mod; });
+  if(modules && !modules.length){ showToast("Tick at least one module, or tick All modules."); return null; }
+  var pnlOn = !modules || modules.indexOf("pnl") >= 0;
+  var lines = (!pnlOn || q("umPnlAll").checked) ? null
+    : Array.from(q("umPnlList").querySelectorAll("input[data-sl]:checked")).map(function(c){ return Number(c.dataset.sl); });
+  if(lines && !lines.length){ showToast("Tick at least one P&L line, or tick All P&L lines."); return null; }
+  return { modules: modules, pnl_lines: lines };
+}
+async function saveUserAccess(uname, acc){
+  var res = await sb.from("profiles").update({ modules: acc.modules, pnl_lines: acc.pnl_lines }).eq("username", uname);
+  if(res.error){
+    var msg = String(res.error.message || res.error);
+    if(/modules|pnl_lines|column/i.test(msg)) throw new Error("Module access is not set up in the database yet (run SQL 10).");
+    throw res.error;
+  }
+}
+function accSummary(u){
+  if(!u || u.role === "admin") return "";
+  var parts = [];
+  if(Array.isArray(u.modules)){
+    parts.push("Modules: " + u.modules.map(function(m){
+      var f = SGM_MODULES.find(function(x){ return x[0] === m; }); return f ? f[1] : m;
+    }).join(", "));
+  }
+  if(Array.isArray(u.pnlLines) && (!Array.isArray(u.modules) || u.modules.indexOf("pnl") >= 0)){
+    var names = accPnlLines();
+    parts.push("P&L: " + u.pnlLines.map(function(sl){
+      var f = names.find(function(x){ return x.sl === Number(sl); }); return f ? f.name : ("SL " + sl);
+    }).join(", "));
+  }
+  return parts.join(" · ");
+}
+function initAccessPicker(){
+  q("umModAll").addEventListener("change", accSync);
+  q("umPnlAll").addEventListener("change", accSync);
+  q("umModList").addEventListener("change", accSync);
+  q("umRole").addEventListener("change", accSync);
+  q("umPnlQuick").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-pnlset]"); if(!b) return;
+    var set = { hr:[1,4], cogs:[1,2,3], none:[] }[b.dataset.pnlset] || [];
+    q("umPnlList").querySelectorAll("input[data-sl]").forEach(function(c){ c.checked = set.indexOf(Number(c.dataset.sl)) >= 0; });
+  });
+}
+
 /* ---- Store picker for Add / Edit user: search + tick boxes.
    The hidden <select id="umStores" multiple> stays the source of truth (saveUserModal reads it). ---- */
 function spStoreById(id){ return (state.stores || []).find(function(s){ return s.id === id; }); }
@@ -12365,6 +12551,8 @@ async function saveUserModal(){
   var display = (q("umDisplay").value||"").trim() || uname;
   var typedPw = (q("umPassword").value||"").trim();
   var ids = Array.from(q("umStores").selectedOptions).map(function(o){ return o.value; });
+  var access = accCollect();
+  if(!access) return;
   /* No more "0000" default: a typed password must be at least 6 characters.
      Leaving it blank keeps the current password (edit) or creates a random one (new user). */
   if(typedPw && typedPw.length < 6){
@@ -12459,6 +12647,10 @@ async function saveUserModal(){
       } catch(authErr) { console.warn("Auth password update skipped/failed:", authErr); }
 
       await saveUserDepartment(editingUserUsername, role);
+      var prevU = state.users.find(function(x){ return x.username === editingUserUsername || x.username === oldUname; });
+      if(access.modules || access.pnl_lines || (prevU && (prevU.modules || prevU.pnlLines))){
+        await saveUserAccess(editingUserUsername, access);
+      }
       showToast("User " + editingUserUsername + " updated.", "success");
       closeUserModal();
       await reloadProfiles();
@@ -12516,6 +12708,10 @@ async function saveUserModal(){
     }
 
     if(role === "dept"){ try { await saveUserDepartment(uname, role); } catch(dErr){ console.warn("Department save:", dErr); } }
+    if(access.modules || access.pnl_lines){
+      try { await saveUserAccess(uname, access); }
+      catch(aErr){ showToast("User created, but module access was not saved: " + (aErr.message || aErr) + " Edit the user to set it again."); }
+    }
     showToast("✓ User " + uname + " created.", "success");
     if(generatedPw){
       window.prompt("User " + uname + " was created with this password. Copy it now and pass it on; it is not shown again.", password);
@@ -12868,6 +13064,7 @@ function switchView(name){
     if(name === "users" && currentUser.role !== "admin"){ name = "daily"; }
     if(name === "backup" && currentUser.role !== "admin"){ name = "daily"; }
     if(name === "stores" && currentUser.role !== "admin"){ name = "daily"; }
+    if(!userCanSee(name)){ name = firstAllowedView(); }
   }
   document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.toggle("active", b.dataset.view===name);});
   document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active", v.id==="view-"+name);});
@@ -13205,6 +13402,7 @@ if(bulkMgrsBtn) bulkMgrsBtn.addEventListener("click", function(){ bulkCreateMana
   if(q("userFilterStatus")) q("userFilterStatus").addEventListener("change", renderUsers);
   if(q("userSearch")) q("userSearch").addEventListener("input", renderUsers);
   if(q("umStoreSearch")) initStorePicker();
+  if(q("umModAll")) initAccessPicker();
   var userImpBtn = q("userImportBtn");
 if(userImpBtn) userImpBtn.addEventListener("click", openUserImportModal);
 
