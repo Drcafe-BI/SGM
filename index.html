@@ -2445,6 +2445,31 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
 .tx-grid-wrap table.sgm-grid td .tx-cell{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
 .tx-grid-wrap table.sgm-grid td.grid-total{background:#f3f7ff !important;font-weight:700;border-left:2px solid #c9d8f8}
 .tx-grid-wrap table.sgm-grid tr.metric-row:hover td.grid-total{background:#e8f0ff !important}
+/* Store picker (Add / Edit user) */
+.sp-picker{border:1px solid #d6deea;border-radius:10px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px}
+.sp-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sp-top input[type=search]{flex:1 1 200px;min-width:0}
+.sp-only{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;white-space:nowrap;margin:0;cursor:pointer}
+.sp-only input{width:auto;margin:0}
+.sp-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.sp-count{font-size:12px;font-weight:700;color:#1d4ed8;margin-right:auto}
+.sp-chips{display:flex;flex-wrap:wrap;gap:5px;max-height:74px;overflow:auto}
+.sp-chips:empty{display:none}
+.sp-chip{display:inline-flex;align-items:center;gap:4px;background:#e8f0ff;color:#1e3a8a;border:1px solid #c9d8f8;border-radius:999px;padding:2px 4px 2px 9px;font-size:11.5px;font-weight:600}
+.sp-chip button{border:0;background:transparent;color:#1e3a8a;cursor:pointer;font-size:14px;line-height:1;padding:0 4px;border-radius:50%}
+.sp-chip button:hover{background:#c9d8f8}
+.sp-list{max-height:240px;overflow:auto;border-top:1px solid #eef2f7;padding-top:4px}
+.sp-item{display:flex;align-items:center;gap:8px;padding:6px 6px;border-radius:7px;cursor:pointer;font-size:13px;margin:0;font-weight:400}
+.sp-item:hover{background:#f3f7ff}
+.sp-item input{width:16px;height:16px;margin:0;flex:0 0 auto}
+.sp-item .sp-code{font-weight:700;min-width:58px}
+.sp-item .sp-meta{color:#64748b;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-item.inactive .sp-code::after{content:" (inactive)";font-weight:500;color:#b45309;font-size:11px}
+.sp-empty{padding:10px;color:#64748b;font-size:12.5px;text-align:center}
+@media (max-width:640px){.sp-list{max-height:46vh}.sp-item{padding:9px 6px}
+  .sp-top input[type=search]{flex-basis:100%}
+  .sp-count{flex-basis:100%}
+  .sp-actions .btn.small{flex:1 1 0;padding:6px 4px;font-size:11.5px}}
 </style>
 <style id="sgm-layout-polish">
 /* ==========================================================================
@@ -3120,6 +3145,10 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
     <section id="view-users" class="view">
       <div class="report-shell">
         <div class="filter-bar">
+          <div class="field" style="min-width:220px;flex:1 1 240px">
+            <label for="userSearch">Search</label>
+            <input class="control-input" id="userSearch" type="search" placeholder="Username, name, role, store, department…" autocomplete="off">
+          </div>
           <div class="field" style="min-width:160px">
             <label for="userFilterStatus">Status</label>
             <select class="control-input" id="userFilterStatus">
@@ -3521,8 +3550,22 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
       <div class="field"><label for="umPassword">Password</label><input id="umPassword" type="text" placeholder="Min 6 characters · blank = keep current (new user: random)"></div>
       <div class="field wide">
         <label>Assigned stores (for AM / OP / Department / Viewer roles)</label>
-        <select id="umStores" multiple size="8" style="height:auto"></select>
-        <small>Use Ctrl / Cmd to select multiple. Admin role ignores this.</small>
+        <select id="umStores" multiple hidden aria-hidden="true" tabindex="-1" style="display:none"></select>
+        <div class="sp-picker" id="umStorePicker">
+          <div class="sp-top">
+            <input id="umStoreSearch" type="search" placeholder="Search store code, name, area, manager…" autocomplete="off">
+            <label class="sp-only"><input type="checkbox" id="umStoreOnlySel"> Selected only</label>
+          </div>
+          <div class="sp-chips" id="umStoreChips"></div>
+          <div class="sp-actions">
+            <span id="umStoreCount" class="sp-count">0 selected</span>
+            <button type="button" class="btn small" id="umStoreSelAll">Select shown</button>
+            <button type="button" class="btn small" id="umStoreClearShown">Clear shown</button>
+            <button type="button" class="btn small" id="umStoreClearAll">Clear all</button>
+          </div>
+          <div class="sp-list" id="umStoreList" role="listbox" aria-multiselectable="true"></div>
+        </div>
+        <small>Tick as many stores as needed. Admin role ignores this.</small>
       </div>
     </div>
     <div class="modal-foot">
@@ -11605,9 +11648,17 @@ function renderUsers(){
   /* Status filter: "" = all, "enabled", "disabled" */
   var statusSel = q("userFilterStatus");
   var statusFilter = statusSel ? statusSel.value : "";
+  var searchEl = q("userSearch");
+  var terms = (searchEl ? searchEl.value : "").toLowerCase().split(/\s+/).filter(Boolean);
+  var roleNames = { admin:"admin", op:"operation manager op", am:"area manager am", viewer:"viewer read only", dept:"department manager dept", store:"store" };
   var shownUsers = state.users.filter(function(u){
-    if(statusFilter === "enabled")  return !!u.is_active;
-    if(statusFilter === "disabled") return !u.is_active;
+    if(statusFilter === "enabled"  && !u.is_active) return false;
+    if(statusFilter === "disabled" &&  u.is_active) return false;
+    if(terms.length){
+      var hay = [u.username, u.display, roleNames[u.role] || u.role, u.department, (u.storeIds || []).join(" "),
+                 u.is_active ? "active enabled" : "inactive disabled"].join(" ").toLowerCase();
+      for(var i = 0; i < terms.length; i++){ if(hay.indexOf(terms[i]) === -1) return false; }
+    }
     return true;
   });
   var summary = q("usersSummary");
@@ -11618,7 +11669,7 @@ function renderUsers(){
   }
   if(!shownUsers.length){
     tbody += '<tr><td colspan="6" class="empty">' +
-      (state.users.length ? "No " + statusFilter + " users." : "No users.") + '</td></tr>';
+      (!state.users.length ? "No users." : terms.length ? "No users match your search." : "No " + statusFilter + " users.") + '</td></tr>';
   }
   shownUsers.forEach(function(u){
     var roleClass = u.role === "admin" ? "admin" : u.role === "op" ? "op" : u.role === "am" ? "am" : u.role === "viewer" ? "viewer" : u.role === "dept" ? "dept" : "sm";
@@ -11762,6 +11813,9 @@ function openUserModal(username){
     q("umPassword").value = "";
     Array.from(sel.options).forEach(function(o){ o.selected = false; });
   }
+  q("umStoreSearch").value = "";
+  q("umStoreOnlySel").checked = false;
+  spRender();
   /* Department (only for Department Managers): suggestions from the alert rules and other users */
   q("umDepartment").value = (u && u.department) || "";
   var deptSet = {};
@@ -11771,6 +11825,63 @@ function openUserModal(username){
   syncUserDeptField();
   q("userModal").classList.add("show");
   setTimeout(function(){ q("umUsername").focus(); }, 30);
+}
+/* ---- Store picker for Add / Edit user: search + tick boxes.
+   The hidden <select id="umStores" multiple> stays the source of truth (saveUserModal reads it). ---- */
+function spStoreById(id){ return (state.stores || []).find(function(s){ return s.id === id; }); }
+function spSelectedIds(){ return Array.from(q("umStores").options).filter(function(o){ return o.selected; }).map(function(o){ return o.value; }); }
+function spSetSelected(id, on){
+  Array.from(q("umStores").options).forEach(function(o){ if(o.value === id) o.selected = !!on; });
+}
+function spShownIds(){
+  var terms = (q("umStoreSearch").value || "").toLowerCase().split(/\s+/).filter(Boolean);
+  var onlySel = q("umStoreOnlySel").checked;
+  return Array.from(q("umStores").options).filter(function(o){
+    if(onlySel && !o.selected) return false;
+    if(!terms.length) return true;
+    var s = spStoreById(o.value) || {};
+    var hay = (o.value + " " + (s.name || "") + " " + (s.area || "") + " " + (s.type || "") + " " + (s.storeManager || "") + " " +
+               (s.areaManager || "") + " " + (s.opManager || "") + " " + (s.status || "Active")).toLowerCase();
+    for(var i = 0; i < terms.length; i++){ if(hay.indexOf(terms[i]) === -1) return false; }
+    return true;
+  }).map(function(o){ return o.value; });
+}
+function spRender(){
+  var sel = spSelectedIds();
+  q("umStoreCount").textContent = sel.length + " of " + q("umStores").options.length + " selected";
+  q("umStoreChips").innerHTML = sel.map(function(id){
+    return '<span class="sp-chip">' + escapeHtml(id) + '<button type="button" data-id="' + escapeAttr(id) + '" aria-label="Remove ' + escapeAttr(id) + '">×</button></span>';
+  }).join("");
+  var shown = spShownIds();
+  q("umStoreList").innerHTML = shown.length ? shown.map(function(id){
+    var s = spStoreById(id) || {};
+    var meta = [s.name && s.name !== id ? s.name : "", s.area, s.areaManager ? "AM: " + s.areaManager : ""].filter(Boolean).join(" · ");
+    var inactive = (s.status || "Active") !== "Active";
+    return '<label class="sp-item' + (inactive ? ' inactive' : '') + '"><input type="checkbox" data-id="' + escapeAttr(id) + '"' +
+      (sel.indexOf(id) >= 0 ? ' checked' : '') + '><span class="sp-code">' + escapeHtml(id) + '</span><span class="sp-meta">' + escapeHtml(meta) + '</span></label>';
+  }).join("") : '<div class="sp-empty">' + (q("umStoreOnlySel").checked && !sel.length ? "No stores selected yet." : "No stores match.") + '</div>';
+}
+function spBulk(on, all){
+  var ids = all ? Array.from(q("umStores").options).map(function(o){ return o.value; }) : spShownIds();
+  ids.forEach(function(id){ spSetSelected(id, on); });
+  spRender();
+}
+function initStorePicker(){
+  q("umStoreSearch").addEventListener("input", spRender);
+  q("umStoreSearch").addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); } });
+  q("umStoreOnlySel").addEventListener("change", spRender);
+  q("umStoreList").addEventListener("change", function(e){
+    var cb = e.target; if(!cb || !cb.dataset || !cb.dataset.id) return;
+    spSetSelected(cb.dataset.id, cb.checked);
+    spRender();
+  });
+  q("umStoreChips").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-id]"); if(!b) return;
+    spSetSelected(b.dataset.id, false); spRender();
+  });
+  q("umStoreSelAll").addEventListener("click", function(){ spBulk(true, false); });
+  q("umStoreClearShown").addEventListener("click", function(){ spBulk(false, false); });
+  q("umStoreClearAll").addEventListener("click", function(){ spBulk(false, true); });
 }
 function closeUserModal(){
   q("userModal").classList.remove("show");
@@ -13092,6 +13203,8 @@ var bulkMgrsBtn = q("bulkCreateManagersBtn");
 if(bulkMgrsBtn) bulkMgrsBtn.addEventListener("click", function(){ bulkCreateManagers().catch(function(e){ console.error(e); }); });
   q("usersExportBtn").addEventListener("click", exportUsersCsv);
   if(q("userFilterStatus")) q("userFilterStatus").addEventListener("change", renderUsers);
+  if(q("userSearch")) q("userSearch").addEventListener("input", renderUsers);
+  if(q("umStoreSearch")) initStorePicker();
   var userImpBtn = q("userImportBtn");
 if(userImpBtn) userImpBtn.addEventListener("click", openUserImportModal);
 
