@@ -2627,13 +2627,238 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
   .kd-hero,.kd-tiles{grid-template-columns:1fr}
 }
 </style>
+<script>
+/* Apply the saved theme before the page is drawn (no white flash in dark mode) */
+(function(){
+  try{
+    var p = localStorage.getItem("sgm-theme") || "light";
+    var dark = p === "dark" || (p === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }catch(e){ document.documentElement.setAttribute("data-theme", "light"); }
+})();
+</script>
+<style id="sgmTheme3d">
+/* =====================================================================
+   SGM THEME v2 — depth ("3D") touches, smoother motion, page title,
+   theme button, Settings layout and the 3D sign-in page.
+   Dark mode colours are generated from these and all other rules at
+   run time (see sgmTheme in the script).
+   ===================================================================== */
+:root{
+  --d3-shadow-1:0 1px 0 rgba(255,255,255,.7) inset, 0 1px 2px rgba(15,23,42,.06), 0 6px 16px -8px rgba(15,23,42,.14);
+  --d3-shadow-2:0 1px 0 rgba(255,255,255,.7) inset, 0 2px 4px rgba(15,23,42,.06), 0 18px 36px -18px rgba(15,23,42,.30);
+  --d3-ease:cubic-bezier(.2,.8,.2,1);
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="dark"] body{background:#0b1220}
+
+/* ---------- Page title in the top bar (replaces the tag line) ---------- */
+.brand p.page-title{
+  display:inline-flex;align-items:center;gap:6px;margin-top:3px;
+  font-size:12px;font-weight:700;letter-spacing:.01em;color:#1d4ed8;
+  background:linear-gradient(180deg,#eef4ff,#e0eaff);border:1px solid #c7d7fe;
+  padding:2px 10px 2px 8px;border-radius:999px;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset, 0 2px 6px -3px rgba(29,78,216,.35);
+}
+.brand p.page-title::before{content:"";width:6px;height:6px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.22)}
+.brand p.page-title.pt-in{animation:ptIn .35s var(--d3-ease)}
+@keyframes ptIn{from{opacity:0;transform:translateY(4px) rotateX(40deg)}to{opacity:1;transform:none}}
+
+/* ---------- Theme button ---------- */
+.theme-btn{
+  position:relative;width:38px;height:38px;flex:none;border-radius:12px;cursor:pointer;
+  display:grid;place-items:center;padding:0;
+  background:linear-gradient(180deg,#ffffff,#eef2f7);color:#334155;
+  border:1px solid #dbe2ea;
+  box-shadow:0 1px 0 #fff inset, 0 -2px 0 rgba(15,23,42,.06) inset, 0 4px 10px -4px rgba(15,23,42,.25);
+  transition:transform .18s var(--d3-ease), box-shadow .18s var(--d3-ease);
+}
+.theme-btn:hover{transform:translateY(-1px)}
+.theme-btn:active{transform:translateY(1px) scale(.96)}
+.theme-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;grid-area:1/1;transition:transform .45s var(--d3-ease),opacity .3s}
+.theme-btn .ic-sun{opacity:0;transform:rotate(-90deg) scale(.5)}
+html[data-theme="dark"] .theme-btn .ic-moon{opacity:0;transform:rotate(90deg) scale(.5)}
+html[data-theme="dark"] .theme-btn .ic-sun{opacity:1;transform:none;color:#fbbf24}
+.theme-btn .ic-moon{fill:currentColor;stroke:none}
+.login-theme-btn{position:fixed;top:16px;right:16px;z-index:5}
+
+/* ---------- Smooth page changes ---------- */
+.view.active{animation:viewIn .38s var(--d3-ease)}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px) scale(.995)}to{opacity:1;transform:none}}
+.modal-backdrop.show .modal{animation:modalIn .32s var(--d3-ease)}
+@keyframes modalIn{from{opacity:0;transform:perspective(900px) translateY(14px) rotateX(6deg) scale(.98)}to{opacity:1;transform:none}}
+
+/* ---------- Depth on cards (soft layered shadow + top light edge) ---------- */
+.card,.report-shell,.table-card,.chart-card,.backup-card,.kd-card,.section{
+  box-shadow:var(--d3-shadow-1);
+  transition:box-shadow .25s var(--d3-ease), transform .25s var(--d3-ease);
+}
+.kd-card:hover,.chart-card:hover,.backup-card.set-card:hover{transform:translateY(-3px);box-shadow:var(--d3-shadow-2)}
+
+/* ---------- 3D buttons ---------- */
+.btn{transition:transform .15s var(--d3-ease), box-shadow .2s var(--d3-ease), background .2s, filter .2s}
+.btn:not(.small){box-shadow:0 1px 0 rgba(255,255,255,.75) inset, 0 -2px 0 rgba(15,23,42,.05) inset, 0 2px 5px -2px rgba(15,23,42,.18)}
+.btn:hover:not(:disabled){transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:translateY(1px) scale(.985);box-shadow:0 1px 2px rgba(15,23,42,.18) inset}
+.btn.primary:not(.small),.btn.gold:not(.small){box-shadow:0 1px 0 rgba(255,255,255,.22) inset, 0 -3px 0 rgba(0,0,0,.18) inset, 0 6px 14px -6px rgba(15,23,42,.45)}
+.btn.danger:not(.small){box-shadow:0 1px 0 rgba(255,255,255,.6) inset, 0 -2px 0 rgba(185,28,28,.10) inset, 0 3px 8px -4px rgba(185,28,28,.35)}
+
+/* ---------- Side menu: raised active item ---------- */
+.side-nav .nav-btn{transition:background .2s, transform .18s var(--d3-ease), box-shadow .2s}
+.side-nav .nav-btn:hover{transform:translateX(2px)}
+.side-nav .nav-btn.active{
+  box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 -2px 0 rgba(0,0,0,.25) inset, 0 8px 18px -10px rgba(0,0,0,.6);
+}
+
+/* ---------- Inputs: soft inset ---------- */
+input[type=text],input[type=number],input[type=search],input[type=date],input[type=month],input[type=password],select,textarea{
+  transition:border-color .2s, box-shadow .2s, background .2s;
+}
+
+/* ---------- Settings page ---------- */
+.set-page{display:flex;flex-direction:column;gap:22px;max-width:1200px}
+.set-intro h2{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.set-intro p{margin:4px 0 0;color:var(--text-muted);font-size:13px}
+.set-group-head{display:flex;gap:12px;align-items:center;margin:0 0 10px}
+.set-group-head h3{margin:0;font-size:15px;font-weight:800;color:var(--text)}
+.set-group-head p{margin:2px 0 0;font-size:12.5px;color:var(--text-muted)}
+.set-ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;flex:none;
+  background:linear-gradient(180deg,#ffffff,#eef2f7);border:1px solid #dbe2ea;
+  box-shadow:0 1px 0 #fff inset, 0 -2px 0 rgba(15,23,42,.06) inset, 0 6px 12px -6px rgba(15,23,42,.3)}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.set-card{border-radius:16px}
+.set-card p{color:var(--text-muted);font-size:12.5px;line-height:1.55}
+.set-wide{grid-column:1/-1}
+.set-preview{padding:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;margin-bottom:10px;font-size:12.5px}
+.set-theme{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.set-theme-opt{flex:1 1 110px;padding:10px 12px;border-radius:12px;border:1px solid #dbe2ea;cursor:pointer;font-weight:700;font-size:13px;
+  background:linear-gradient(180deg,#ffffff,#f1f5f9);color:#1e293b;
+  box-shadow:0 1px 0 #fff inset, 0 -2px 0 rgba(15,23,42,.05) inset, 0 3px 8px -4px rgba(15,23,42,.25);
+  transition:transform .15s var(--d3-ease), box-shadow .2s, border-color .2s}
+.set-theme-opt:hover{transform:translateY(-1px)}
+.set-theme-opt.active{border-color:#1d4ed8;background:linear-gradient(180deg,#eef4ff,#dbe7ff);color:#1e3a8a;
+  box-shadow:0 0 0 3px rgba(29,78,216,.15), 0 1px 0 #fff inset}
+.set-ref{padding:0 !important}
+.set-ref summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;padding:14px 18px;font-weight:800;font-size:14.5px;color:var(--text)}
+.set-ref summary::-webkit-details-marker{display:none}
+.set-ref summary::after{content:"▾";margin-left:auto;color:var(--text-muted);transition:transform .25s}
+.set-ref[open] summary::after{transform:rotate(180deg)}
+.set-ref .formula-list{padding:0 22px 18px 40px;margin:0}
+
+/* =====================================================================
+   SIGN-IN PAGE — 3D scene + glass panel
+   ===================================================================== */
+.login-screen{background:radial-gradient(1200px 600px at 80% -10%,#e6ecff 0%,transparent 60%),radial-gradient(900px 500px at 100% 110%,#fff3d6 0%,transparent 55%),#f4f6fd}
+.login-hero{isolation:isolate;
+  background:
+    radial-gradient(700px 420px at 85% 15%,rgba(255,255,255,.16),transparent 60%),
+    radial-gradient(600px 400px at 10% 100%,rgba(245,158,11,.22),transparent 60%),
+    linear-gradient(140deg,#1d3fe0 0%,#1230c4 45%,#0a1d8f 100%)}
+.login-hero > *:not(.l3d-scene){position:relative;z-index:2}
+.login-hero-body h1{text-shadow:0 2px 0 rgba(0,0,0,.12),0 12px 30px rgba(0,0,0,.25)}
+.login-hero-brand .brand-mark{transform:perspective(400px) rotateY(-14deg) rotateX(6deg);
+  box-shadow:6px 8px 0 rgba(0,0,0,.18), 0 18px 30px -10px rgba(0,0,0,.45) !important}
+
+.l3d-scene{position:absolute;inset:0;z-index:1;perspective:900px;perspective-origin:70% 40%;pointer-events:none;overflow:hidden}
+.l3d-floor{position:absolute;left:-30%;right:-30%;bottom:-20%;height:75%;
+  background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);
+  background-size:56px 56px;transform:rotateX(68deg);transform-origin:50% 100%;
+  -webkit-mask-image:linear-gradient(to top,#000 10%,transparent 85%);mask-image:linear-gradient(to top,#000 10%,transparent 85%);
+  animation:l3dFloor 6s linear infinite}
+@keyframes l3dFloor{to{background-position:0 56px,0 0}}
+.l3d-cube{position:absolute;right:16%;top:20%;width:110px;height:110px;transform-style:preserve-3d;animation:l3dSpin 18s linear infinite}
+.l3d-cube i{position:absolute;inset:0;border-radius:18px;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:26px;color:#fbbf24;letter-spacing:-.5px;
+  background:linear-gradient(145deg,rgba(255,255,255,.30),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.45);
+  box-shadow:inset 0 0 30px rgba(255,255,255,.18);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.l3d-cube .f1{transform:translateZ(55px);background:linear-gradient(145deg,#0f172a,#1e293b);border-color:rgba(251,191,36,.6)}
+.l3d-cube .f2{transform:rotateY(180deg) translateZ(55px)}
+.l3d-cube .f3{transform:rotateY(90deg) translateZ(55px)}
+.l3d-cube .f4{transform:rotateY(-90deg) translateZ(55px)}
+.l3d-cube .f5{transform:rotateX(90deg) translateZ(55px)}
+.l3d-cube .f6{transform:rotateX(-90deg) translateZ(55px)}
+@keyframes l3dSpin{from{transform:rotateX(-18deg) rotateY(0)}to{transform:rotateX(-18deg) rotateY(360deg)}}
+.l3d-ring{position:absolute;right:calc(16% - 45px);top:calc(20% - 45px);width:200px;height:200px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fbbf24;transform:rotateX(72deg);animation:l3dRing 9s linear infinite}
+@keyframes l3dRing{to{transform:rotateX(72deg) rotateZ(360deg)}}
+.l3d-orb{position:absolute;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,#ffffff 0%,rgba(255,255,255,.55) 18%,rgba(147,197,253,.35) 45%,rgba(30,64,175,.25) 75%);
+  box-shadow:0 20px 40px -12px rgba(0,0,0,.45);animation:l3dFloat 7s ease-in-out infinite}
+.l3d-orb.o1{width:64px;height:64px;right:40%;top:12%}
+.l3d-orb.o2{width:34px;height:34px;right:5%;top:56%;animation-delay:-2.5s}
+.l3d-orb.o3{width:22px;height:22px;right:44%;top:80%;animation-delay:-4.5s;
+  background:radial-gradient(circle at 32% 28%,#fff7d6,#fbbf24 55%,#b45309)}
+@keyframes l3dFloat{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(0,-16px,40px)}}
+.l3d-bars{position:absolute;right:12%;bottom:16%;width:220px;height:120px;display:flex;align-items:flex-end;gap:12px;
+  transform:rotateX(58deg) rotateZ(-28deg);transform-style:preserve-3d}
+.l3d-bars b{flex:1;height:var(--h);border-radius:6px 6px 2px 2px;transform-origin:bottom;
+  background:linear-gradient(180deg,#fde68a,#f59e0b);box-shadow:6px 6px 0 rgba(0,0,0,.22);
+  animation:l3dBar 3.6s var(--d3-ease) infinite alternate}
+.l3d-bars b:nth-child(2){animation-delay:-.6s}.l3d-bars b:nth-child(3){animation-delay:-1.2s}
+.l3d-bars b:nth-child(4){animation-delay:-1.8s}.l3d-bars b:nth-child(5){animation-delay:-2.4s}
+@keyframes l3dBar{from{transform:scaleY(.55)}to{transform:scaleY(1)}}
+
+.login-card{perspective:1200px}
+.login-panel{
+  width:100%;max-width:460px;padding:30px 30px 26px;border-radius:24px;
+  background:linear-gradient(160deg,rgba(255,255,255,.92),rgba(255,255,255,.78));
+  -webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 1px 0 #fff inset, 0 0 0 1px rgba(21,53,214,.06), 0 30px 60px -30px rgba(10,29,143,.45), 0 12px 24px -12px rgba(15,23,42,.18);
+  transform-style:preserve-3d;transition:transform .5s var(--d3-ease);
+  animation:panelIn .8s var(--d3-ease) both;
+}
+@keyframes panelIn{from{opacity:0;transform:perspective(1200px) rotateY(-16deg) rotateX(8deg) translateY(20px)}to{opacity:1;transform:none}}
+.login-panel .brand-row,.login-panel .login-tabs{transform:translateZ(30px)}
+.login-panel button.primary{transform:translateZ(40px);border-radius:12px !important;
+  background:linear-gradient(180deg,#1f2937,#0b1220) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.18) inset, 0 -3px 0 rgba(0,0,0,.35) inset, 0 14px 24px -12px rgba(11,18,32,.65) !important;
+  transition:transform .2s var(--d3-ease), filter .2s}
+.login-panel button.primary:hover{filter:brightness(1.15);background:linear-gradient(180deg,#2448ef,#1230c4) !important}
+.login-panel button.primary:active{transform:translateZ(40px) translateY(2px)}
+.login-panel input{border-radius:12px !important;border:1px solid #d5def3 !important;background:#f3f6ff !important;
+  box-shadow:0 2px 4px rgba(15,23,42,.05) inset}
+.login-panel input:focus{border-color:#1535d6 !important;background:#fff !important;box-shadow:0 0 0 4px rgba(21,53,214,.14) !important}
+.login-panel .login-tabs{border-radius:12px;padding:4px;box-shadow:0 2px 4px rgba(15,23,42,.06) inset}
+.login-panel .login-tabs button{border-radius:9px}
+.login-panel .login-tabs button.active{box-shadow:0 1px 0 #fff inset, 0 4px 10px -4px rgba(15,23,42,.3)}
+@media (max-width:900px){
+  .l3d-cube{width:52px;height:52px;right:26px;top:auto;bottom:18px}
+  .l3d-cube i{font-size:12px;border-radius:10px}
+  .l3d-cube .f1{transform:translateZ(26px)}.l3d-cube .f2{transform:rotateY(180deg) translateZ(26px)}
+  .l3d-cube .f3{transform:rotateY(90deg) translateZ(26px)}.l3d-cube .f4{transform:rotateY(-90deg) translateZ(26px)}
+  .l3d-cube .f5{transform:rotateX(90deg) translateZ(26px)}.l3d-cube .f6{transform:rotateX(-90deg) translateZ(26px)}
+  .l3d-orb.o2{right:auto;left:62%;top:auto;bottom:22px}
+  .l3d-orb.o3{right:auto;left:52%;top:auto;bottom:48px}
+  .l3d-ring,.l3d-bars,.l3d-orb.o1{display:none}
+  .login-panel{padding:22px 18px 20px;border-radius:20px}
+  .login-theme-btn{top:12px;right:12px}
+  .brand p.page-title{font-size:11px;padding:1px 8px 1px 7px}
+}
+
+/* Colours glide when switching light / dark */
+html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:background-color .35s ease,color .35s ease,border-color .35s ease,fill .35s ease !important}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+</style>
 </head>
 <body>
 
 <!-- ============ LOGIN SCREEN ============ -->
 <!-- Shown by init() only when there is no saved session (avoids a flash of the sign-in page on reload) -->
 <div class="login-screen" id="loginScreen">
+  <button class="theme-btn login-theme-btn" id="loginThemeBtn" type="button" title="Switch to dark mode" aria-label="Switch to dark mode"><svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
   <div class="login-hero">
+    <div class="l3d-scene" aria-hidden="true">
+      <div class="l3d-floor"></div>
+      <div class="l3d-cube"><i class="f1">SGM</i><i class="f2"></i><i class="f3"></i><i class="f4"></i><i class="f5"></i><i class="f6"></i></div>
+      <div class="l3d-ring"></div>
+      <div class="l3d-orb o1"></div><div class="l3d-orb o2"></div><div class="l3d-orb o3"></div>
+      <div class="l3d-bars"><b style="--h:38%"></b><b style="--h:62%"></b><b style="--h:48%"></b><b style="--h:80%"></b><b style="--h:66%"></b></div>
+    </div>
     <div class="login-hero-brand">
       <div class="brand-mark">SGM</div>
       <span>SGM<br>Operations Control</span>
@@ -2645,6 +2870,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
     <div class="login-hero-foot">SGM Operations Control · Daily input, automatic weekly and monthly control</div>
   </div>
   <div class="login-card">
+   <div class="login-panel" id="loginPanel">
     <div class="brand-row">
       <div class="brand-mark">SGM</div>
       <div>
@@ -2675,6 +2901,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
       <button class="primary" id="loginManagerBtn" type="button">Sign in</button>
       <div class="login-error" id="loginManagerError"></div>
     </div>
+   </div>
   </div>
 </div>
 
@@ -2686,7 +2913,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
         <div class="brand-mark">SGM</div>
         <div>
           <h1>SGM Operations Control</h1>
-          <p>Daily input · automatic weekly and monthly control</p>
+          <p id="pageTitle" class="page-title">Daily Entry</p>
         </div>
       </div>
       <div class="store-control">
@@ -2719,6 +2946,7 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
             <span id="userName">—</span>
             <span class="role-tag" id="userRole">—</span>
           </span>
+          <button class="theme-btn" id="themeBtn" type="button" title="Switch to dark mode" aria-label="Switch to dark mode"><svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
           <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
           <span class="local-pill"><span class="local-dot"></span>Saved</span>
         </div>
@@ -2781,9 +3009,9 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
         <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c2 .6 3.2 2.4 3.6 5.2"/></svg>
         <span class="nav-tx">Users</span>
       </button>
-      <button class="nav-btn" data-view="backup" data-roles="admin" title="Backup &amp; Settings">
+      <button class="nav-btn" data-view="backup" data-roles="admin" title="Settings">
         <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-        <span class="nav-tx">Backup &amp; Settings</span>
+        <span class="nav-tx">Settings</span>
       </button>
     </nav>
     <button type="button" class="side-collapse" id="sideCollapseBtn" title="Collapse menu">
@@ -2866,8 +3094,8 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
         <button class="btn" id="txResetBtn" type="button">Reset</button>
         <div class="bar-actions">
           <div class="tx-view-toggle" id="txViewToggle">
-            <button type="button" data-view="list" class="active">List</button>
-            <button type="button" data-view="grid">Grid</button>
+            <button type="button" data-view="list">List</button>
+            <button type="button" data-view="grid" class="active">Grid</button>
           </div>
           <span class="bar-sep"></span>
           <div class="exp-dd"><button type="button" class="btn exp-btn" aria-haspopup="menu" aria-expanded="false">Export <span class="exp-caret" aria-hidden="true"></span></button><div class="exp-menu" role="menu"><button class="exp-item" role="menuitem" id="txExportBtn" type="button"><span class="exp-ic xl">XLS</span>Excel (.csv)</button><button class="exp-item" role="menuitem" id="txPdfBtn" type="button"><span class="exp-ic pdf">PDF</span>PDF</button></div></div>
@@ -3309,76 +3537,110 @@ table.tx-pro thead tr.tx-cols th.grp-start{border-left:1px solid rgba(255,255,25
 
     <!-- ============ BACKUP & SETTINGS ============ -->
     <section id="view-backup" class="view">
-      <div class="backup-grid">
-        <div class="backup-card">
-          <h3>Data Backup</h3>
-          <p>Download one JSON file with the stores, daily records, users and salary table loaded from the server, plus this browser's settings.</p>
-          <div id="storageStat" class="storage-stat"></div>
-          <div class="toolbar">
-            <button class="btn primary" id="backupBtn">Download JSON Backup</button>
-            <button class="btn" id="exportDailyBtn">Export All Daily CSV</button>
+      <div class="set-page">
+        <div class="set-intro">
+          <h2>Settings</h2>
+          <p>Business figures used in the calculations, data backup, and options for this device.</p>
+        </div>
+
+        <!-- 1. Business settings -->
+        <div class="set-group">
+          <div class="set-group-head"><span class="set-ic" aria-hidden="true">💼</span><div><h3>Business settings</h3><p>Figures the reports and the P&amp;L are calculated from.</p></div></div>
+          <div class="set-grid">
+            <div class="backup-card set-card set-wide">
+              <h3>Salary &amp; overtime table</h3>
+              <p>Monthly CTC (SAR) and hourly OT rate per role. Used for daily Employee Cost and Employee Cost %.</p>
+              <table class="salary-table" id="salaryTable"></table>
+              <div class="toolbar" style="margin-top:12px"><button class="btn primary" id="saveSalaryBtn">Save salary table</button></div>
+            </div>
+            <div class="backup-card set-card">
+              <h3>P&amp;L monthly targets</h3>
+              <p>Upload the monthly target file (same layout as <code>PNL Heads target.xlsx</code>): one row per store per cost head. Uploading the same month again replaces it.</p>
+              <div class="field" style="margin-bottom:10px">
+                <label for="pnlTargetFile">Excel file</label>
+                <input type="file" id="pnlTargetFile" accept=".xlsx,.xls">
+              </div>
+              <div id="pnlTargetPreview" class="set-preview" style="display:none"></div>
+              <div class="toolbar">
+                <button class="btn" id="pnlTargetTemplateBtn" type="button">Download template</button>
+                <button class="btn primary" id="pnlTargetUploadBtn" type="button" disabled>Upload targets</button>
+              </div>
+            </div>
+            <div class="backup-card set-card">
+              <h3>Operating hours</h3>
+              <p>Planned opening hours per day, used only to estimate lost sales during breakdowns. Saved on this device.</p>
+              <div class="field"><label for="plannedHours">Planned hours per day</label><input id="plannedHours" type="number" min="1" max="24" step="0.5"></div>
+              <div class="toolbar" style="margin-top:12px"><button class="btn primary" id="saveSettingsBtn">Save</button></div>
+            </div>
           </div>
         </div>
-        <div class="backup-card">
-          <h3>Restore Backup</h3>
-          <p>Select a backup created by this tool. Its stores, daily entries and salary table are written to the server. Entries for the same store and date are overwritten; nothing is deleted.</p>
-          <input type="file" id="restoreFile" accept=".json,application/json">
-          <div class="toolbar" style="margin-top:10px"><button class="btn danger" id="restoreBtn">Restore Selected File</button></div>
+
+        <!-- 2. Data -->
+        <div class="set-group">
+          <div class="set-group-head"><span class="set-ic" aria-hidden="true">🗄️</span><div><h3>Data &amp; backup</h3><p>Download a copy of everything, or restore one.</p></div></div>
+          <div class="set-grid">
+            <div class="backup-card set-card">
+              <h3>Backup</h3>
+              <p>One JSON file with the stores, daily entries, users and salary table from the server.</p>
+              <div id="storageStat" class="storage-stat"></div>
+              <div class="toolbar">
+                <button class="btn primary" id="backupBtn">Download backup</button>
+                <button class="btn" id="exportDailyBtn">Export all daily entries (CSV)</button>
+              </div>
+            </div>
+            <div class="backup-card set-card">
+              <h3>Restore</h3>
+              <p>Writes the stores, daily entries and salary table from a backup to the server. Same store + date is overwritten; nothing is deleted.</p>
+              <input type="file" id="restoreFile" accept=".json,application/json">
+              <div class="toolbar" style="margin-top:10px"><button class="btn danger" id="restoreBtn">Restore selected file</button></div>
+            </div>
+          </div>
         </div>
-        <div class="backup-card">
-          <h3>Operating Settings</h3>
-          <p>Planned operating hours are used only to estimate lost sales during breakdowns. This setting is saved in this browser only.</p>
-          <div class="field"><label for="plannedHours">Planned operating hours per day</label><input id="plannedHours" type="number" min="1" max="24" step="0.5"></div>
-          <div class="toolbar" style="margin-top:12px"><button class="btn primary" id="saveSettingsBtn">Save Settings</button></div>
+
+        <!-- 3. This device -->
+        <div class="set-group">
+          <div class="set-group-head"><span class="set-ic" aria-hidden="true">📱</span><div><h3>This device</h3><p>Only affects the browser you are using now.</p></div></div>
+          <div class="set-grid">
+            <div class="backup-card set-card">
+              <h3>Appearance</h3>
+              <p>Light or dark look. You can also switch with the sun / moon button at the top.</p>
+              <div class="set-theme" role="radiogroup" aria-label="Appearance">
+                <button type="button" class="set-theme-opt" data-theme-pick="light">☀️ Light</button>
+                <button type="button" class="set-theme-opt" data-theme-pick="dark">🌙 Dark</button>
+                <button type="button" class="set-theme-opt" data-theme-pick="system">💻 Same as device</button>
+              </div>
+            </div>
+            <div class="backup-card set-card">
+              <h3>Clear browser data</h3>
+              <p>Resets the filters and settings saved in this browser and reloads everything from the server. Server data is not affected.</p>
+              <button class="btn danger" id="clearAllBtn">Clear browser data</button>
+            </div>
+          </div>
         </div>
-        <div class="backup-card">
-          <h3>Store Login PIN</h3>
-          <p>Store PINs are the store accounts' passwords on the server. To change one, open <strong>Users</strong>, click <strong>Edit</strong> on the store's account and type a new password.</p>
-        </div>
-        <div class="backup-card">
-          <h3>Clear Browser Data</h3>
-          <p>Resets the settings and filters saved in this browser and reloads everything from the server. Data on the server is not affected.</p>
-          <button class="btn danger" id="clearAllBtn">Clear Browser Data</button>
-        </div>
-        <div class="backup-card">
-          <h3>Salary &amp; Overtime Table</h3>
-          <p>Monthly CTC (SAR) and hourly OT rate per role. Used to compute daily Employee Cost and Employee Cost %.</p>
-          <table class="salary-table" id="salaryTable"></table>
-          <div class="toolbar" style="margin-top:12px"><button class="btn primary" id="saveSalaryBtn">Save Salary Table</button></div>
-        </div>
-        <div class="backup-card">
-  <h3>P&amp;L Monthly Targets</h3>
-  <p>Upload the monthly target file (same layout as <code>PNL Heads target.xlsx</code>). One row per store per cost head. Re-uploading the same month replaces that month's targets.</p>
-  <div class="field" style="margin-bottom:10px">
-    <label for="pnlTargetFile">Select Excel file</label>
-    <input type="file" id="pnlTargetFile" accept=".xlsx,.xls">
-  </div>
-  <div id="pnlTargetPreview" style="display:none;padding:12px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;margin-bottom:10px;font-size:12.5px"></div>
-  <div class="toolbar">
-    <button class="btn" id="pnlTargetTemplateBtn" type="button">Download template</button>
-    <button class="btn primary" id="pnlTargetUploadBtn" type="button" disabled>Upload targets</button>
-  </div>
-</div>
-        <div class="backup-card formula-box">
-          <h3>Calculation Logic</h3>
-          <ul class="formula-list">
-            <li><strong>Sales W/O Tax</strong> = Gross Sales − Void − Tax.</li>
-            <li><strong>Net Sales</strong> = Sales W/O Tax − Complimentary Discount − Promotion Discount.</li>
-            <li><strong>ADT</strong> = Transactions ÷ Opening Days.</li>
-            <li><strong>AT</strong> = Sales W/O Tax ÷ Transactions.</li>
-            <li><strong>Sales mix %</strong> = Category Sales ÷ Sales W/O Tax.</li>
-            <li><strong>Water Qty V/S Transaction</strong> = Water Qty ÷ Transactions.</li>
-            <li><strong>Modifier %</strong> = Modifier Sales ÷ Sales W/O Tax.</li>
-            <li><strong>Upsize %</strong> = (Grande + Jumbo) ÷ (Tall + Grande + Jumbo).</li>
-            <li><strong>DC App variance</strong> = App total − POS total.</li>
-                       <li><strong>Cash Deposited Variance</strong> = Cash Deposited − Cash Sales as per POS.</li>
-            <li><strong>Google Review Qty</strong> = Google Positive Review Qty + Google Negative Review Qty.</li>
-            <li><strong>DC App Sales %</strong> = (DC App POS + DC App App) ÷ Sales W/O Tax.</li>
-            <li><strong>Employee Cost</strong> = Σ (headcount × monthly CTC ÷ 30) + Σ (OT hours × role rate).</li>
-            <li><strong>COGS / Wastage / Employee %</strong> = amount ÷ Sales W/O Tax.</li>
-            <li><strong>COGS %</strong> = (COGS + Wastage) ÷ Sales W/O Tax, summed over the period (same as the Live P&amp;L).</li>
-            <li><strong>Estimated Lost Sales</strong> = Breakdown Hours × Daily Sales Target ÷ Planned Hours.</li>
-          </ul>
+
+        <!-- 4. Reference -->
+        <div class="set-group">
+          <details class="backup-card set-card formula-box set-ref">
+            <summary><span class="set-ic" aria-hidden="true">📘</span> How the numbers are calculated</summary>
+            <ul class="formula-list">
+              <li><strong>Sales W/O Tax</strong> = Gross Sales − Void − Tax.</li>
+              <li><strong>Net Sales</strong> = Sales W/O Tax − Complimentary Discount − Promotion Discount.</li>
+              <li><strong>ADT</strong> = Transactions ÷ Opening Days.</li>
+              <li><strong>AT</strong> = Sales W/O Tax ÷ Transactions.</li>
+              <li><strong>Sales mix %</strong> = Category Sales ÷ Sales W/O Tax.</li>
+              <li><strong>Water Qty V/S Transaction</strong> = Water Qty ÷ Transactions.</li>
+              <li><strong>Modifier %</strong> = Modifier Sales ÷ Sales W/O Tax.</li>
+              <li><strong>Upsize %</strong> = (Grande + Jumbo) ÷ (Tall + Grande + Jumbo).</li>
+              <li><strong>DC App variance</strong> = App total − POS total.</li>
+              <li><strong>Cash Deposited Variance</strong> = Cash Deposited − Cash Sales as per POS.</li>
+              <li><strong>Google Review Qty</strong> = Google Positive Review Qty + Google Negative Review Qty.</li>
+              <li><strong>DC App Sales %</strong> = (DC App POS + DC App App) ÷ Sales W/O Tax.</li>
+              <li><strong>Employee Cost</strong> = Σ (headcount × monthly CTC ÷ 30) + Σ (OT hours × role rate).</li>
+              <li><strong>COGS / Wastage / Employee %</strong> = amount ÷ Sales W/O Tax.</li>
+              <li><strong>COGS %</strong> = (COGS + Wastage) ÷ Sales W/O Tax, summed over the period (same as the Live P&amp;L).</li>
+              <li><strong>Estimated Lost Sales</strong> = Breakdown Hours × Daily Sales Target ÷ Planned Hours.</li>
+            </ul>
+          </details>
         </div>
       </div>
     </section>
@@ -9837,7 +10099,7 @@ function initPeriodPickers(){
    ============================================================ */
 var txSortKey = "date";
 var txSortDir = -1;
-var txViewMode = "list";
+var txViewMode = "grid";   /* Daily Report opens in Grid view */
   var dashViewMode = "chart";
 
 function getTxStoresForScope(){
@@ -13068,7 +13330,13 @@ function switchView(name){
   }
   document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.toggle("active", b.dataset.view===name);});
   document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active", v.id==="view-"+name);});
-  
+  var navBtn = document.querySelector('.nav-btn[data-view="' + name + '"]');
+  var pt = q("pageTitle");
+  if(pt){
+    pt.textContent = navBtn ? (navBtn.getAttribute("title") || name) : name;
+    pt.classList.remove("pt-in"); void pt.offsetWidth; pt.classList.add("pt-in");
+  }
+
   document.body.scrollTop = 0; document.documentElement.scrollTop = 0;
   refreshCurrentView();
 }
@@ -13098,6 +13366,245 @@ function refreshCurrentView(){
       if(still && still.dataset.view === name) refreshCurrentView();
     }).catch(function(e){ console.warn("Record refresh:", e); });
   }
+}
+
+/* ============================================================
+   THEME — light / dark / same as device.
+   Dark colours are generated from the page's own CSS: light surfaces
+   become dark, dark text becomes light, strong brand colours stay.
+   Inline colours in generated HTML are handled the same way.
+   ============================================================ */
+var sgmTheme = (function(){
+  var KEY = "sgm-theme";
+  var built = false, observer = null, ctx = null;
+  function pref(){ try { return localStorage.getItem(KEY) || "light"; } catch(e){ return "light"; } }
+  function isDarkPref(p){ return p === "dark" || (p === "system" && window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); }
+
+  /* ---- colour helpers ---- */
+  function parse(str){
+    if(!str) return null;
+    str = String(str).trim();
+    if(!str || /var\(|^inherit$|^initial$|^unset$|^currentcolor$|^transparent$|^none$/i.test(str)) return null;
+    if(!ctx){ ctx = document.createElement("canvas").getContext("2d"); }
+    ctx.fillStyle = "#010203"; ctx.fillStyle = str;
+    var v = ctx.fillStyle;
+    if(v === "#010203" && !/^#010203$/i.test(str) && !/rgb\(\s*1\s*,\s*2\s*,\s*3\s*\)/.test(str)) return null;
+    var m;
+    if(v.charAt(0) === "#"){ return { r:parseInt(v.substr(1,2),16), g:parseInt(v.substr(3,2),16), b:parseInt(v.substr(5,2),16), a:1 }; }
+    if((m = v.match(/rgba?\(([^)]+)\)/))){ var p = m[1].split(",").map(Number); return { r:p[0], g:p[1], b:p[2], a:p.length > 3 ? p[3] : 1 }; }
+    return null;
+  }
+  function toHsl(c){
+    var r = c.r/255, g = c.g/255, b = c.b/255, mx = Math.max(r,g,b), mn = Math.min(r,g,b), h = 0, s = 0, l = (mx+mn)/2;
+    if(mx !== mn){ var d = mx-mn; s = l > .5 ? d/(2-mx-mn) : d/(mx+mn);
+      h = mx === r ? (g-b)/d + (g < b ? 6 : 0) : mx === g ? (b-r)/d + 2 : (r-g)/d + 4; h /= 6; }
+    return { h:h, s:s, l:l, a:c.a };
+  }
+  function fmt(h){
+    var hh = Math.round(h.h*360), ss = Math.round(h.s*100), ll = Math.round(h.l*100);
+    return h.a < 1 ? "hsla(" + hh + "," + ss + "%," + ll + "%," + (+h.a.toFixed(3)) + ")" : "hsl(" + hh + "," + ss + "%," + ll + "%)";
+  }
+  function neutral(h){ if(h.s < .12){ h.h = 222/360; h.s = .24; } return h; }
+  function strong(h){ return h.s > .42 && h.l > .22 && h.l < .72; }
+  function mapBg(str){
+    var c = parse(str); if(!c) return null; var h = toHsl(c);
+    if(h.l < .5 || strong(h)) return null;                 /* already dark, or a brand colour */
+    h.l = .105 + (1 - h.l) * .55; h.s = Math.min(h.s, .55) * .75; neutral(h);
+    return fmt(h);
+  }
+  function mapBorder(str){
+    var c = parse(str); if(!c) return null; var h = toHsl(c);
+    if(h.l < .5 || strong(h)) return null;
+    h.l = .20 + (1 - h.l) * .45; h.s = Math.min(h.s, .5) * .6; neutral(h);
+    return fmt(h);
+  }
+  function mapText(str){
+    var c = parse(str); if(!c) return null; var h = toHsl(c);
+    if(h.l >= .55) return null;                           /* light text stays */
+    h.l = .93 - h.l * .55; if(h.s < .12){ h.h = 215/360; h.s = .2; }
+    return fmt(h);
+  }
+  function mapGradient(v){
+    if(!v || v.indexOf("gradient") < 0) return null;
+    var changed = false;
+    var out = v.replace(/(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b|\bwhite\b)/g, function(col){
+      var m = mapBg(col); if(m){ changed = true; return m; } return col;
+    });
+    return changed ? out : null;
+  }
+  var BORDER_PROPS = ["border-top-color","border-right-color","border-bottom-color","border-left-color","outline-color"];
+  function convertStyle(st){
+    var decl = [];
+    function add(p, v){ if(v) decl.push(p + ":" + v + (st.getPropertyPriority(p) ? " !important" : "")); }
+    var bg = st.getPropertyValue("background-color");
+    var keptBg = false;
+    if(bg){ var nb = mapBg(bg); add("background-color", nb); if(!nb && parse(bg) && strong(toHsl(parse(bg)))) keptBg = true; }
+    var bi = st.getPropertyValue("background-image"); add("background-image", mapGradient(bi));
+    if(bi && /gradient/.test(bi) && !mapGradient(bi)) keptBg = true;
+    var col = st.getPropertyValue("color"); if(col && !keptBg) add("color", mapText(col));
+    BORDER_PROPS.forEach(function(p){ var v = st.getPropertyValue(p); if(v) add(p, mapBorder(v)); });
+    ["fill","stroke"].forEach(function(p){ var v = st.getPropertyValue(p); if(v) add(p, mapText(v)); });
+    for(var i = 0; i < st.length; i++){
+      var name = st[i]; if(name.indexOf("--") !== 0) continue;
+      var val = st.getPropertyValue(name).trim(); if(!parse(val)) continue;
+      var n = name.toLowerCase(), out = null;
+      if(/border|line|divider|stroke/.test(n)) out = mapBorder(val);
+      else if(/text|ink|muted|subtle|fg|heading/.test(n)) out = mapText(val);
+      else if(/(^--bg|surface|soft|panel|card|tint|hover|row|stripe|track|fill|wash|-50$|-100$)/.test(n)) out = mapBg(val);
+      else { var hh = toHsl(parse(val)); if(hh.l > .86) out = mapBg(val); }
+      if(out) decl.push(name + ":" + out);
+    }
+    return decl;
+  }
+  function darkSel(sel){
+    return sel.split(",").map(function(s){
+      s = s.trim(); if(!s) return s;
+      if(/^:root\b/.test(s)) return 'html[data-theme="dark"]' + s.replace(/^:root/, "");
+      if(/^html\b/.test(s)){
+        if(/^html\[data-theme/.test(s)) return null;
+        return 'html[data-theme="dark"]' + s.replace(/^html/, "");
+      }
+      return 'html[data-theme="dark"] ' + s;
+    }).filter(Boolean).join(",");
+  }
+  function walk(rules, out){
+    for(var i = 0; i < rules.length; i++){
+      var r = rules[i];
+      if(r.type === 1){                                   /* style rule */
+        if(/data-theme|l3d-|login-hero/.test(r.selectorText)) continue;   /* the blue sign-in scene keeps its colours */
+        var d = convertStyle(r.style);
+        var sel = d.length ? darkSel(r.selectorText) : "";
+        if(sel) out.push(sel + "{" + d.join(";") + "}");
+      } else if(r.type === 4 && r.cssRules){             /* @media */
+        var inner = []; walk(r.cssRules, inner);
+        if(inner.length) out.push("@media " + r.media.mediaText + "{" + inner.join("") + "}");
+      } else if(r.cssRules && r.type === 12){           /* @supports */
+        var inner2 = []; walk(r.cssRules, inner2);
+        if(inner2.length) out.push("@supports " + r.conditionText + "{" + inner2.join("") + "}");
+      }
+    }
+  }
+  function build(){
+    if(built) return;
+    var out = [];
+    Array.from(document.styleSheets).forEach(function(sh){
+      if(sh.ownerNode && sh.ownerNode.id === "sgmDarkCss") return;
+      var rules; try { rules = sh.cssRules; } catch(e){ return; }
+      if(rules) walk(rules, out);
+    });
+    /* finishing touches that the generator cannot infer */
+    out.push(
+      'html[data-theme="dark"] body{background:#0b1220;color:#e2e8f0}',
+      'html[data-theme="dark"] .topbar{background:rgba(11,18,32,.78);border-bottom-color:#1e293b}',
+      'html[data-theme="dark"] .login-panel{background:linear-gradient(160deg,rgba(17,25,45,.92),rgba(13,20,38,.82));border-color:rgba(148,163,184,.18);box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 30px 60px -30px rgba(0,0,0,.8)}',
+      'html[data-theme="dark"] .login-panel input{background:#0f1a30 !important;border-color:#24324d !important;color:#e2e8f0}',
+      'html[data-theme="dark"] .login-panel input:focus{background:#13213d !important}',
+      'html[data-theme="dark"] .login-screen{background:radial-gradient(1200px 600px at 80% -10%,#16234a 0%,transparent 60%),#0b1220}',
+      'html[data-theme="dark"] .card,html[data-theme="dark"] .report-shell,html[data-theme="dark"] .table-card,html[data-theme="dark"] .chart-card,html[data-theme="dark"] .backup-card,html[data-theme="dark"] .kd-card,html[data-theme="dark"] .section{box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 10px 24px -14px rgba(0,0,0,.7)}',
+      'html[data-theme="dark"] .btn:not(.small){box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 -2px 0 rgba(0,0,0,.25) inset,0 3px 8px -4px rgba(0,0,0,.6)}',
+      'html[data-theme="dark"] .theme-btn,html[data-theme="dark"] .set-ic,html[data-theme="dark"] .set-theme-opt{background:linear-gradient(180deg,#1b2742,#121c33);border-color:#26344f;color:#cbd5e1;box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 4px 10px -4px rgba(0,0,0,.6)}',
+      'html[data-theme="dark"] .set-theme-opt.active{border-color:#3b82f6;color:#bfdbfe;box-shadow:0 0 0 3px rgba(59,130,246,.25)}',
+      'html[data-theme="dark"] .brand p.page-title{background:linear-gradient(180deg,#16244a,#122042);border-color:#28407a;color:#93c5fd;box-shadow:none}',
+      'html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:#64748b}',
+      'html[data-theme="dark"] img{filter:brightness(.92)}'
+    );
+    var el = document.getElementById("sgmDarkCss");
+    if(!el){ el = document.createElement("style"); el.id = "sgmDarkCss"; document.head.appendChild(el); }
+    el.textContent = out.join("\n");
+    built = true;
+  }
+
+  /* ---- inline style="" colours (reports build HTML with inline colours) ---- */
+  function fixInline(el){
+    if(!el || el.nodeType !== 1 || !el.hasAttribute("style")) return;
+    if(el.hasAttribute("data-lt")) return;
+    var st = el.style, orig = el.getAttribute("style");
+    if(!/#|rgb|white|hsl/i.test(orig)) return;
+    var d = convertStyle(st);
+    if(!d.length) return;
+    el.setAttribute("data-lt", orig);
+    d.forEach(function(x){ var k = x.split(":")[0], v = x.slice(k.length + 1).replace(/ !important$/, ""); st.setProperty(k, v, /!important$/.test(x) ? "important" : ""); });
+  }
+  function fixTree(root){
+    if(!root || root.nodeType !== 1) return;
+    fixInline(root);
+    root.querySelectorAll("[style]").forEach(fixInline);
+  }
+  function restoreInline(){
+    document.querySelectorAll("[data-lt]").forEach(function(el){ el.setAttribute("style", el.getAttribute("data-lt")); el.removeAttribute("data-lt"); });
+  }
+  function watch(on){
+    if(on && !observer){
+      var pending = [], raf = 0;
+      observer = new MutationObserver(function(muts){
+        muts.forEach(function(m){ m.addedNodes.forEach(function(n){ if(n.nodeType === 1) pending.push(n); }); });
+        if(!raf) raf = requestAnimationFrame(function(){ raf = 0; var list = pending; pending = []; list.forEach(fixTree); });
+      });
+      observer.observe(document.body, { childList:true, subtree:true });
+    } else if(!on && observer){ observer.disconnect(); observer = null; }
+  }
+  function chartColors(dark){
+    if(!window.Chart || !Chart.defaults) return;
+    Chart.defaults.color = dark ? "#cbd5e1" : "#475569";
+    Chart.defaults.borderColor = dark ? "rgba(148,163,184,.16)" : "rgba(15,23,42,.08)";
+  }
+  function syncButtons(dark, p){
+    ["themeBtn","loginThemeBtn"].forEach(function(id){
+      var b = document.getElementById(id); if(!b) return;
+      var t = dark ? "Switch to light mode" : "Switch to dark mode";
+      b.title = t; b.setAttribute("aria-label", t);
+    });
+    document.querySelectorAll("[data-theme-pick]").forEach(function(b){ b.classList.toggle("active", b.dataset.themePick === p); });
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", dark ? "#0b1220" : "#ffffff");
+  }
+  function apply(p, redraw){
+    var dark = isDarkPref(p);
+    if(dark){ build(); }
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    if(dark){ fixTree(document.body); } else { restoreInline(); }
+    watch(dark);
+    chartColors(dark);
+    syncButtons(dark, p);
+    if(redraw && typeof currentUser !== "undefined" && currentUser){ try { refreshCurrentView(); } catch(e){} }
+  }
+  function set(p){
+    try { localStorage.setItem(KEY, p); } catch(e){}
+    document.documentElement.classList.add("theme-anim");
+    setTimeout(function(){ document.documentElement.classList.remove("theme-anim"); }, 450);
+    apply(p, true);
+  }
+  function toggle(){ set(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); }
+  function init(){
+    ["themeBtn","loginThemeBtn"].forEach(function(id){ var b = document.getElementById(id); if(b) b.addEventListener("click", toggle); });
+    document.querySelectorAll("[data-theme-pick]").forEach(function(b){ b.addEventListener("click", function(){ set(b.dataset.themePick); }); });
+    if(window.matchMedia){
+      var mq = matchMedia("(prefers-color-scheme: dark)");
+      var onSys = function(){ if(pref() === "system") apply("system", true); };
+      if(mq.addEventListener) mq.addEventListener("change", onSys); else if(mq.addListener) mq.addListener(onSys);
+    }
+    apply(pref(), false);
+  }
+  return { init:init, set:set, toggle:toggle, apply:apply };
+})();
+
+/* Sign-in panel follows the pointer a little (3D tilt) */
+function initLoginTilt(){
+  var scr = q("loginScreen"), panel = q("loginPanel");
+  if(!scr || !panel || !window.matchMedia || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(matchMedia("(hover: none)").matches) return;   /* phones / tablets: no tilt */
+  var raf = 0;
+  scr.addEventListener("pointermove", function(e){
+    if(raf) return;
+    raf = requestAnimationFrame(function(){
+      raf = 0;
+      var r = panel.getBoundingClientRect();
+      var x = (e.clientX - (r.left + r.width / 2)) / window.innerWidth;
+      var y = (e.clientY - (r.top + r.height / 2)) / window.innerHeight;
+      panel.style.transform = "rotateY(" + (x * 10).toFixed(2) + "deg) rotateX(" + (-y * 8).toFixed(2) + "deg)";
+    });
+  });
+  scr.addEventListener("pointerleave", function(){ panel.style.transform = ""; });
 }
 
 function bindEvents(){
@@ -13461,6 +13968,7 @@ document.addEventListener("keydown", function(e){
   
  async function init(){
     bindEvents();
+  try { sgmTheme.init(); initLoginTilt(); } catch(themeErr){ console.warn("Theme:", themeErr); }
   renderForm();
   q("f-date").value = todayIso();
   q("f-date-hero").value = todayIso();
