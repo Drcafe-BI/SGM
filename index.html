@@ -3701,6 +3701,26 @@ function entryWarnings(rec, c){
   return w;
 }
 
+/* ---------- Sign-in that the server still accepts ----------
+   The page can keep showing data with a sign-in that was cancelled on the server
+   (e.g. by an older Logout that signed out every device). Before calling a server
+   function, check it; refresh it if needed; otherwise ask to sign in again. */
+var sessionExpiredShown = false;
+async function sgmFreshSession(){
+  var s = (await sb.auth.getSession()).data.session;
+  if(!s) return null;
+  var u = await sb.auth.getUser();
+  if(!u.error && u.data && u.data.user) return s;
+  var r = await sb.auth.refreshSession();
+  if(!r.error && r.data && r.data.session) return r.data.session;
+  if(!sessionExpiredShown){
+    sessionExpiredShown = true;
+    showToast("Your sign-in on this device has expired. Please sign in again.");
+    setTimeout(function(){ sessionExpiredShown = false; logout().catch(function(){}); }, 2500);
+  }
+  return null;
+}
+
 /* ---------- Who saved an entry (columns from SQL 03, 26 Nov) ---------- */
 function userNameById(id){
   if(!id) return "";
@@ -4260,7 +4280,7 @@ async function sbFetchProfile(userId){
   const { data, error } = await sb.from("profiles").select("*").eq("id", userId).maybeSingle();
   if(error) throw error;
   if(!data){
-    try { await sb.auth.signOut(); } catch(ignore){}
+    try { await sb.auth.signOut({ scope: "local" }); } catch(ignore){}
     throw new Error("This login has no user profile. Ask the administrator to check the account in Supabase.");
   }
   return {
@@ -4582,12 +4602,12 @@ async function tryStoreLogin(){
 
     var profile = await sbFetchProfile(result.data.user.id);
       if (profile.is_active === false) {
-      await sb.auth.signOut();
+      await sb.auth.signOut({ scope: "local" });
       err.textContent = "Your account has been disabled by the administrator.";
       return;
     }
     if(profile.role !== "store"){
-      await sb.auth.signOut();
+      await sb.auth.signOut({ scope: "local" });
       err.textContent = "This account is not a store login. Use the Manager tab.";
       return;
     }
@@ -4626,7 +4646,7 @@ async function tryManagerLogin(){
 
     var profile = await sbFetchProfile(result.data.user.id);
      if (profile.is_active === false) {
-      await sb.auth.signOut();
+      await sb.auth.signOut({ scope: "local" });
       err.textContent = "Your account has been disabled by the administrator.";
       return;
     }
@@ -4670,7 +4690,7 @@ async function finalizeLogin(){
 
   if(!visibleStores.length && currentUser.role !== "admin"){
     showToast("This account has no assigned stores. Contact admin.");
-    await sb.auth.signOut();
+    await sb.auth.signOut({ scope: "local" });
     currentUser = null;
     return;
   }
@@ -4702,7 +4722,7 @@ async function finalizeLogin(){
 }
 
 async function logout(){
-  try { await sb.auth.signOut(); } catch(e){ console.warn("Sign-out error:", e); }
+  try { await sb.auth.signOut({ scope: "local" }); } catch(e){ console.warn("Sign-out error:", e); }
   currentUser = null;
   visibleStores = [];
   state.records = [];
@@ -4732,7 +4752,7 @@ async function restoreSession(){
     var profile = await sbFetchProfile(user.id);
     /* A user disabled since their last visit must not get back in */
     if(profile.is_active === false){
-      await sb.auth.signOut();
+      await sb.auth.signOut({ scope: "local" });
       var errEl = q("loginManagerError");
       if(errEl) errEl.textContent = "Your account has been disabled by the administrator.";
       return false;
@@ -4757,7 +4777,7 @@ async function restoreSession(){
     await reloadProfiles();
 
     if(!visibleStores.length && currentUser.role !== "admin"){
-      await sb.auth.signOut();
+      await sb.auth.signOut({ scope: "local" });
       currentUser = null;
       return false;
     }
@@ -11641,7 +11661,7 @@ function renderUsers(){
       )) return;
       b.disabled = true;
       try {
-        var delSession = (await sb.auth.getSession()).data.session;
+        var delSession = await sgmFreshSession();
         if(!delSession) throw new Error("Your session has expired. Sign in again.");
         var delRes = await fetch("https://zbbojjgvryhsqzpuwcyq.supabase.co/functions/v1/create-user", {
           method: "POST",
@@ -12269,7 +12289,7 @@ async function saveUserModal(){
       /* Rename = username in profiles + sign-in email together, done by the
          rename-user function. If it fails nothing is changed. */
       if(renaming){
-        var renSession = (await sb.auth.getSession()).data.session;
+        var renSession = await sgmFreshSession();
         if(!renSession) throw new Error("Your session has expired. Sign in again.");
         var renRes = await fetch("https://zbbojjgvryhsqzpuwcyq.supabase.co/functions/v1/create-user", {
           method: "POST",
@@ -12307,7 +12327,7 @@ async function saveUserModal(){
          save that renames the user) leaves the password untouched. */
       var typedPassword = (q("umPassword").value||"").trim();
       if(!renaming && typedPassword) try {
-        var session = (await sb.auth.getSession()).data.session;
+        var session = await sgmFreshSession();
         if(session) {
           await fetch("https://zbbojjgvryhsqzpuwcyq.supabase.co/functions/v1/create-user", {
             method: "POST",
@@ -13440,7 +13460,7 @@ async function renderAlertDevice(){
    If the browser's registration belongs to another account (shared store phone), a fresh
    registration is made for this user. Returns true when the user is set up on this device. */
 async function alSubscribeForMe(){
-  var session = (await sb.auth.getSession()).data.session;
+  var session = await sgmFreshSession();
   if(!session) throw new Error("Your session has expired. Sign in again.");
   var reg = await alRegistration();
   await navigator.serviceWorker.ready;
@@ -13998,7 +14018,7 @@ async function alertsRunCheck(dryRun){
   var label = btn.textContent;
   btn.disabled = true; btn.textContent = dryRun ? "Checking…" : "Sending…";
   try {
-    var session = (await sb.auth.getSession()).data.session;
+    var session = await sgmFreshSession();
     if(!session) throw new Error("Your session has expired. Sign in again.");
     var resp = await fetch(ALERTS_FUNCTION_URL, {
       method: "POST",
@@ -14336,7 +14356,7 @@ async function sendFollowupsNow(){
   var btn = q("ahFollowBtn"), label = btn.textContent;
   btn.disabled = true; btn.textContent = "Checking…";
   try {
-    var session = (await sb.auth.getSession()).data.session;
+    var session = await sgmFreshSession();
     if(!session) throw new Error("Your session has expired. Sign in again.");
     async function call(dry){
       var resp = await fetch(SUPABASE_URL + "/functions/v1/alert-followups", {
@@ -14373,7 +14393,7 @@ async function remindMissingEntries(){
   var btn = q("alRemindBtn"), label = btn.textContent;
   btn.disabled = true; btn.textContent = "Checking…";
   try {
-    var session = (await sb.auth.getSession()).data.session;
+    var session = await sgmFreshSession();
     if(!session) throw new Error("Your session has expired. Sign in again.");
     async function call(dry){
       var resp = await fetch(REMINDERS_FUNCTION_URL, {
