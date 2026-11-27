@@ -1938,6 +1938,25 @@ button.kd-hero-card:hover,.kd-tile:hover{border-color:var(--border-strong);box-s
 .kd-att-num{font-size:13px;color:var(--text-muted)}
 .kd-att-gap{font-weight:700;font-size:13.5px;text-align:right;white-space:nowrap}
 .kd-empty{padding:14px 6px;font-size:13.5px;color:var(--text-muted)}
+/* Entry history: field-by-field changes */
+.hist-list li{display:flex;flex-direction:column;gap:4px}
+.hist-diff{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px}
+.hist-diff th{text-align:left;font-size:11px;font-weight:700;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.04em;padding:4px 8px;border-bottom:1px solid var(--border)}
+.hist-diff td{padding:5px 8px;border-bottom:1px solid var(--border);color:var(--text)}
+.hist-diff td.hist-old{color:#b91c1c;text-decoration:line-through;text-decoration-color:rgba(185,28,28,.4)}
+.hist-diff td.hist-new{color:#047857;font-weight:700}
+.hist-none{font-size:12.5px;color:var(--text-muted)}
+/* Store ranking */
+.kd-rank-sel{margin-left:auto;width:auto;min-width:170px;height:32px;padding:4px 10px;font-size:13px}
+.kd-rank{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.kd-rank-col h5{margin:4px 0 6px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-subtle)}
+.kd-rank-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto 52px;align-items:center;gap:10px;padding:7px 4px;border-top:1px solid var(--border);font-size:13px}
+.kd-rank-no{font-weight:700;color:var(--text-subtle);text-align:center}
+.kd-rank-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.kd-rank-val{font-weight:700;white-space:nowrap;color:var(--text)}
+.kd-rank-mv{font-size:12px;font-weight:700;text-align:right;color:var(--text-subtle)}
+.kd-rank-mv.new{font-weight:600;font-style:italic}
+@media (max-width:760px){.kd-rank{grid-template-columns:1fr}.kd-rank-sel{margin-left:0}}
 .kd-cat{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-subtle);margin:6px 2px 8px}
 .kd-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:6px}
 .kd-tile{display:flex;flex-direction:column;gap:5px;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--border-strong);border-radius:var(--r-md);padding:12px 14px;transition:border-color .15s, box-shadow .15s}
@@ -2011,6 +2030,16 @@ button.kd-hero-card:hover,.kd-tile:hover{border-color:var(--border-strong);box-s
 #pnlTable tr.pnl-total td{background:#e0ecff !important;color:#1e3a8a !important}
 #pnlTable tr.pnl-margin td.good,#pnlTable tr.pnl-total td.good{color:#166534 !important}
 #pnlTable tr.pnl-margin td.bad,#pnlTable tr.pnl-total td.bad{color:#b91c1c !important}
+/* Actual (real month-end costs) and Projected (month end) columns */
+#pnlTable thead th.pc-real{background:#047857 !important;border-color:#065f46 !important}
+#pnlTable thead th.pc-proj{background:#6d28d9 !important;border-color:#5b21b6 !important}
+/* wide table (Actual / Projected shown): keep Description in view while scrolling */
+#pnlTable.pnl-wide th.pc-desc,#pnlTable.pnl-wide td.pc-desc{position:sticky;left:0;z-index:3;background:#fff;box-shadow:1px 0 0 var(--border)}
+#pnlTable.pnl-wide thead th.pc-desc{z-index:7;background:#1d4ed8}
+#pnlTable.pnl-wide tr.pnl-margin td.pc-desc{background:#bfdbfe}
+#pnlTable.pnl-wide tr.pnl-total td.pc-desc{background:#e0ecff}
+#pnlTable.pnl-wide tr.pnl-ebitda td.pc-desc{background:#1d4ed8}
+.pnl-info{padding:10px 14px;margin:10px 0;border-radius:10px;font-size:12.5px;line-height:1.55;background:#eff6ff;color:#1e3a8a;border:1px solid #bfdbfe}
 
 /* ==========================================================================
    REPORT TABLES — Daily, Weekly, Monthly
@@ -3280,6 +3309,7 @@ html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:
       </div>
     </div>
     <div id="pnlStatusChip" style="display:none;padding:10px 14px;margin:10px 0;border-radius:10px;font-size:12.5px;font-weight:600;"></div>
+    <div id="pnlInfoChip" class="pnl-info" style="display:none"></div>
   </div>
 
   <!-- Graph view of the same P&L -->
@@ -3297,7 +3327,7 @@ html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:
       <div class="chart-wrap" style="height:300px"><canvas id="pnlChartDaily"></canvas></div>
     </div>
     <div class="chart-card">
-      <h4>Actual vs Target</h4>
+      <h4>Estimated vs Target</h4>
       <div class="kd-note" id="pnlChartTargetNote"></div>
       <div class="chart-wrap" style="height:320px"><canvas id="pnlChartTarget"></canvas></div>
     </div>
@@ -3340,6 +3370,8 @@ html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:
         <div class="kd-hero" id="dashHero"></div>
         <!-- 2) What needs attention -->
         <div class="kd-card" id="dashAttention"></div>
+        <!-- 2b) Store ranking: best and worst stores, with the move since last month -->
+        <div class="kd-card" id="dashRanking" style="display:none"></div>
         <!-- 3) Every KPI as a tile, grouped by category -->
         <div id="dashTiles"></div>
         <!-- 4) The selected KPI by store and by day -->
@@ -3525,6 +3557,7 @@ html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:
             </select></div>
           <div class="field search-field"><label for="ahSearch">Search</label><input class="control-input" id="ahSearch" type="text" placeholder="Store, person or cost line"></div>
           <div class="bar-actions">
+            <button class="btn danger" id="ahDeleteBtn" type="button" data-roles="admin" style="display:none">Delete check</button>
             <button class="btn" id="ahFollowBtn" type="button" data-roles="admin" title="Send the hourly follow-up now to everyone with a pending action">Send follow-ups now</button>
             <div class="exp-dd"><button type="button" class="btn exp-btn" aria-haspopup="menu" aria-expanded="false">Export <span class="exp-caret" aria-hidden="true"></span></button><div class="exp-menu" role="menu"><button class="exp-item" role="menuitem" id="ahExportBtn" type="button"><span class="exp-ic xl">XLS</span>Excel (.csv)</button></div></div>
           </div>
@@ -3563,6 +3596,19 @@ html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:
               <div class="toolbar">
                 <button class="btn" id="pnlTargetTemplateBtn" type="button">Download template</button>
                 <button class="btn primary" id="pnlTargetUploadBtn" type="button" disabled>Upload targets</button>
+              </div>
+            </div>
+            <div class="backup-card set-card">
+              <h3>P&amp;L real month-end costs</h3>
+              <p>When a month is closed, upload the real costs in the same layout as the targets (Month, DESCRIPTION, one column per store). The Live P&amp;L then shows an <b>Actual</b> column for that month beside Estimated, with the difference. Uploading the same month again replaces it.</p>
+              <div class="field" style="margin-bottom:10px">
+                <label for="pnlActualFile">Excel file</label>
+                <input type="file" id="pnlActualFile" accept=".xlsx,.xls">
+              </div>
+              <div id="pnlActualPreview" class="set-preview" style="display:none"></div>
+              <div class="toolbar">
+                <button class="btn" id="pnlActualTemplateBtn" type="button">Download template</button>
+                <button class="btn primary" id="pnlActualUploadBtn" type="button" disabled>Upload real costs</button>
               </div>
             </div>
             <div class="backup-card set-card">
@@ -4457,6 +4503,43 @@ async function sbFetchPnlTargets(storeId, fromMonth, toMonth){
   return out;
 }
 
+/* Real month-end costs (pnl_actuals, added 28 Nov). Returns
+   { byMonth: { "2026-11-01": { rent: 29135.9, … } },   selected stores summed
+     storeMonths: { "DC222|2026-11-01": true, … },     which store-months have them
+     missing: true when the table is not set up yet } */
+async function sbFetchPnlActuals(storeId, fromMonth, toMonth){
+  var ids = Array.isArray(storeId) ? storeId : [storeId];
+  var out = { byMonth:{}, storeMonths:{}, missing:false };
+  try {
+    var data = await sbFetchAllPages(function(){
+      return sb.from("pnl_actuals")
+        .select("store_id,month,cost_head,actual_amount")
+        .in("store_id", ids)
+        .gte("month", fromMonth)
+        .lte("month", toMonth)
+        .order("month").order("store_id").order("cost_head");
+    });
+    data.forEach(function(r){
+      var m = String(r.month).slice(0, 10);
+      if(!out.byMonth[m]) out.byMonth[m] = {};
+      out.byMonth[m][r.cost_head] = (out.byMonth[m][r.cost_head] || 0) + (Number(r.actual_amount) || 0);
+      out.storeMonths[r.store_id + "|" + m] = true;
+    });
+  } catch(e){
+    if(/pnl_actuals|does not exist|schema cache|PGRST205|42P01/i.test(String((e && (e.message || e.code)) || ""))) out.missing = true;
+    else console.warn("P&L actuals fetch:", e);
+  }
+  return out;
+}
+async function sbUpsertPnlActuals(rows){
+  if(!rows || !rows.length) return { count: 0 };
+  const { error, count } = await sb
+    .from("pnl_actuals")
+    .upsert(rows, { onConflict: "store_id,month,cost_head", count: "exact" });
+  if(error) throw error;
+  return { count: count || rows.length };
+}
+
 /* Upsert an array of { store_id, month, cost_head, target_amount } */
 async function sbUpsertPnlTargets(rows){
   if(!rows || !rows.length) return { count: 0 };
@@ -4475,11 +4558,20 @@ function normalizePnlHeader(h){
   return String(h==null?"":h).trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function handlePnlTargetFile(){
-  var inp = q("pnlTargetFile");
-  var preview = q("pnlTargetPreview");
-  var uploadBtn = q("pnlTargetUploadBtn");
-  if(!inp.files || !inp.files[0]){ pnlPendingRows = null; if(uploadBtn) uploadBtn.disabled = true; return; }
+function handlePnlTargetFile(){ readPnlHeadFile("target"); }
+function handlePnlActualFile(){ readPnlHeadFile("actual"); }
+var pnlActualPendingRows = null;
+
+/* Reads a P&L head file (Month, DESCRIPTION, one column per store) for
+   targets ("target") or real month-end costs ("actual") — same layout. */
+function readPnlHeadFile(kind){
+  var isActual = kind === "actual";
+  var inp = q(isActual ? "pnlActualFile" : "pnlTargetFile");
+  var preview = q(isActual ? "pnlActualPreview" : "pnlTargetPreview");
+  var uploadBtn = q(isActual ? "pnlActualUploadBtn" : "pnlTargetUploadBtn");
+  var amountField = isActual ? "actual_amount" : "target_amount";
+  function setPending(rows){ if(isActual) pnlActualPendingRows = rows; else pnlPendingRows = rows; }
+  if(!inp.files || !inp.files[0]){ setPending(null); if(uploadBtn) uploadBtn.disabled = true; return; }
 
   var reader = new FileReader();
   reader.onload = function(e){
@@ -4551,12 +4643,9 @@ function handlePnlTargetFile(){
             val = m ? parseFloat(m[0]) : 0;
           }
           var amount = Number(val) || 0;
-          rows.push({
-            store_id: storeCode,
-            month: monthIso,
-            cost_head: headKey,
-            target_amount: amount
-          });
+          var rowObj = { store_id: storeCode, month: monthIso, cost_head: headKey };
+          rowObj[amountField] = amount;
+          rows.push(rowObj);
         });
       });
 
@@ -4565,7 +4654,7 @@ function handlePnlTargetFile(){
         return;
       }
 
-      pnlPendingRows = rows;
+      setPending(rows);
 
       var months = {};
       var stores = {};
@@ -4617,6 +4706,37 @@ async function uploadPnlTargets(){
     showToast("Upload failed: " + (e.message||""));
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = "Upload targets"; }
+  }
+}
+
+/* Real month-end costs: same file layout as the targets */
+async function uploadPnlActuals(){
+  if(!(currentUser && currentUser.role === "admin")){ showToast("Only admin can upload real costs."); return; }
+  if(!pnlActualPendingRows || !pnlActualPendingRows.length){ showToast("Select a file first."); return; }
+  var months = {};
+  pnlActualPendingRows.forEach(function(r){ months[r.month] = true; });
+  var monthList = Object.keys(months).sort().map(monthShortLabel).join(", ");
+  if(!window.confirm("Upload " + pnlActualPendingRows.length + " real cost rows for " + monthList +
+      "?\n\nThe Live P&L will show an Actual column for these months. Rows already uploaded for the same store / month / cost line are replaced.")) return;
+  var btn = q("pnlActualUploadBtn");
+  if(btn){ btn.disabled = true; btn.textContent = "Uploading…"; }
+  try {
+    var stamp = { updated_at: new Date().toISOString(), updated_by: currentUser.username || null };
+    var rows = pnlActualPendingRows.map(function(r){ return Object.assign({}, r, stamp); });
+    var result = await sbUpsertPnlActuals(rows);
+    showToast("✓ Uploaded " + result.count + " real cost rows.", "success");
+    pnlActualPendingRows = null;
+    q("pnlActualFile").value = "";
+    q("pnlActualPreview").style.display = "none";
+    refreshCurrentView();
+  } catch(e){
+    console.error("Actuals upload failed:", e);
+    var m = String(e.message || "");
+    showToast(/pnl_actuals|schema cache|does not exist/i.test(m)
+      ? "Real costs are not set up yet: run 02_SGM_pnl_actuals_and_delete_check.sql in Supabase."
+      : "Upload failed: " + m);
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = "Upload real costs"; }
   }
 }
 
@@ -6103,9 +6223,11 @@ async function calculatePnl(storeId, fromIso, toIso){
   try {
     targets = await sbFetchPnlTargets(storeIdList, fromMonth, toMonth);
   } catch(e){ console.warn("P&L targets fetch:", e); }
+  var actualsRes = await sbFetchPnlActuals(storeIdList, fromMonth, toMonth);
 
   /* ---- 3) Prorate each cost head across months in range ---- */
-  function prorate(head){
+  function prorate(head, src){
+    src = src || targets;
     var total = 0;
     var start = new Date(fromIso + "T12:00:00");
     var end   = new Date(toIso   + "T12:00:00");
@@ -6118,7 +6240,7 @@ async function calculatePnl(storeId, fromIso, toIso){
       var overlapEnd   = end < lastOfMonth ? end : lastOfMonth;
       var overlapDays  = Math.round((overlapEnd - overlapStart) / 86400000) + 1;
       var dim = daysInMonth(ym);
-      var monthTargets = targets[ym + "-01"] || {};
+      var monthTargets = src[ym + "-01"] || {};
       var headTarget = monthTargets[head] || 0;
       total += headTarget * (overlapDays / dim);
       cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1, 12);
@@ -6283,6 +6405,96 @@ async function calculatePnl(storeId, fromIso, toIso){
   rows.push(mk(28, "TOTAL UNCONTROLLABLE EXP",               totalUnctrl,          totalUnctrlTarget));
   rows.push(mk(29, "EBITDA (OPERATIONAL)",                   ebitda,               ebitdaTarget,       true));
 
+  /* ---- 6) Actual (real month-end costs) and Projected (month end) ----
+     Both are worked out line by line with the same P&L formulas. */
+  var CTRL_HEADS   = [[5,"advertisement"],[6,"travel"],[7,"communication"],[8,"water"],[9,"recruitment"],
+                      [10,"sewage"],[11,"vehicle_fuel"],[12,"gas_electricity"],[13,"cleaning"],
+                      [14,"repair_maintenance"],[15,"printing_stationery"],[16,"computer"],
+                      [17,"entertainment"],[18,"warehouse_distribution"],[19,"sales_expenses"]];
+  var UNCTRL_HEADS = [[22,"government"],[23,"bank_charges"],[24,"rent"],[25,"professional_fees"],[26,"training"]];
+  function lineValues(v){              /* v: cost head → SAR; returns SL → SAR */
+    var o = {}, s;
+    o[1] = n(v.sales); o[2] = n(v.cogs); o[3] = o[1] - o[2];
+    o[4] = n(v.employee_cost);
+    CTRL_HEADS.forEach(function(h){ o[h[0]] = n(v[h[1]]); });
+    s = 0; for(var i = 4; i <= 19; i++) s += o[i]; o[20] = s; o[21] = o[3] - o[20];
+    UNCTRL_HEADS.forEach(function(h){ o[h[0]] = n(v[h[1]]); });
+    o[27] = n(v.royalty);
+    s = 0; for(var j = 22; j <= 27; j++) s += o[j]; o[28] = s; o[29] = o[21] - o[28];
+    return o;
+  }
+  function lineColor(sl, d){           /* good / bad for a difference on this line */
+    if(d == null || Math.round(d) === 0) return "";
+    var revenue = (sl === 1 || sl === 3 || sl === 21 || sl === 29);
+    return (revenue ? d > 0 : d < 0) ? "good" : "bad";
+  }
+
+  /* Months the range touches, and whether every selected store has real costs for each */
+  var monthsInRange = [];
+  for(var mc = fromMonth; mc <= toMonth; mc = addMonths(mc, 1)) monthsInRange.push(mc);
+  var realStoreCount = 0;
+  storeIdList.forEach(function(s){
+    if(monthsInRange.every(function(m){ return actualsRes.storeMonths[s + "|" + m]; })) realStoreCount++;
+  });
+  var hasReal = !actualsRes.missing && storeIdList.length > 0 && realStoreCount === storeIdList.length;
+  var anyReal = Object.keys(actualsRes.storeMonths).length > 0;
+
+  var realLines = null;
+  if(hasReal){
+    var rb = actualsRes.byMonth;
+    var realHas = function(head){ return monthsInRange.every(function(m){ return rb[m] && rb[m][head] != null; }); };
+    /* A head missing from the uploaded file keeps its estimated figure */
+    var rv = function(head, fallback){ return realHas(head) ? prorate(head, rb) : fallback; };
+    var rvals = {
+      sales: rv("sales", sales),
+      cogs: realHas("cogs") ? prorate("cogs", rb) + (realHas("wastage") ? prorate("wastage", rb) : 0) : cogs,
+      employee_cost: rv("employee_cost", employeeCost)
+    };
+    CTRL_HEADS.concat(UNCTRL_HEADS).forEach(function(h){ rvals[h[1]] = rv(h[1], n(est(budget[h[1]]))); });
+    rvals.royalty = rv("royalty", rvals.sales * 0.03);
+    realLines = lineValues(rvals);
+  }
+
+  /* Projected: one month only. Daily-entry lines run at the current pace to
+     month end; budget lines take the full month budget; royalty 3% of sales. */
+  var proj = null, projLines = null, monthTgtLines = null;
+  var daysWithData = Object.keys(dayMap).length;
+  if(fromMonth === toMonth && daysWithData > 0){
+    var dimP = daysInMonth(fromMonth);
+    var pace = dimP / daysWithData;
+    var mt = targets[fromMonth] || {};
+    var pvals = { sales: sales * pace, cogs: cogs * pace, employee_cost: employeeCost * pace };
+    CTRL_HEADS.concat(UNCTRL_HEADS).forEach(function(h){ pvals[h[1]] = noSales ? 0 : n(mt[h[1]]); });
+    pvals.royalty = pvals.sales * 0.03;
+    projLines = lineValues(pvals);
+    var hasMonthTargets = Object.keys(mt).some(function(k){ return n(mt[k]) > 0; });
+    if(hasMonthTargets){
+      var mSales = n(mt.sales) > 0 ? n(mt.sales) : dailyInputTarget * pace;
+      var tvals = { sales: mSales, cogs: mt.cogs, employee_cost: mt.employee_cost };
+      CTRL_HEADS.concat(UNCTRL_HEADS).forEach(function(h){ tvals[h[1]] = mt[h[1]]; });
+      tvals.royalty = n(mt.royalty) > 0 ? n(mt.royalty) : mSales * 0.03;
+      monthTgtLines = lineValues(tvals);
+    }
+    proj = { month: fromMonth, daysWithData: daysWithData, daysInMonth: dimP };
+  }
+
+  rows.forEach(function(r){
+    if(realLines){
+      r.real     = realLines[r.sl];
+      r.realPct  = realLines[1] ? (r.real / realLines[1]) * 100 : null;
+      r.realDiff = r.real - n(r.actual);                 /* Actual − Estimated */
+      r.realDiffCls = lineColor(r.sl, r.realDiff);
+    }
+    if(projLines){
+      r.proj     = projLines[r.sl];
+      r.projPct  = projLines[1] ? (r.proj / projLines[1]) * 100 : null;
+      r.projTarget = monthTgtLines ? monthTgtLines[r.sl] : null;
+      r.projVar  = r.projTarget != null ? r.proj - r.projTarget : null;   /* Projected − month target */
+      r.projVarCls = lineColor(r.sl, r.projVar);
+    }
+    r.varianceCls = lineColor(r.sl, r.variance);
+  });
+
   /* Day-by-day figures for the graph view. Each day carries one day's share
      of the budgeted (non-daily) costs, so the day EBITDA uses the P&L formula. */
   var rangeDays = Math.round((new Date(toIso + "T12:00:00") - new Date(fromIso + "T12:00:00")) / 86400000) + 1;
@@ -6298,7 +6510,10 @@ async function calculatePnl(storeId, fromIso, toIso){
     };
   });
 
-  return { rows: rows, sales: sales, hasTargets: hasTargets, recordCount: records.length, daily: daily, rangeDays: rangeDays, wastage: wastageTotal };
+  return { rows: rows, sales: sales, hasTargets: hasTargets, recordCount: records.length, daily: daily, rangeDays: rangeDays, wastage: wastageTotal,
+           hasReal: hasReal, anyReal: anyReal, realMissing: actualsRes.missing,
+           realStoreCount: realStoreCount, storeCount: storeIdList.length, months: monthsInRange,
+           proj: proj, noSales: noSales };
 }
 /* ============================================================
    DAY EBITDA — same formula as the Live P&L, for one store and one day
@@ -6524,14 +6739,63 @@ async function openEntryHistory(){
   }
   var rows = res.data || [];
   if(!rows.length){ body.innerHTML = '<div class="bd-empty">No changes recorded for this day yet. Changes are recorded from 26 Nov 2026.</div>'; return; }
+
+  /* The entry as it is now: the "after" side of the newest change */
+  var cur = await sb.from("daily_records").select("data,breakdowns").eq("store_id", storeId).eq("date", date).maybeSingle();
+  var nowVersion = cur.data ? { data: cur.data.data || {}, breakdowns: cur.data.breakdowns || [] } : null;
+
+  /* Each log row keeps the entry BEFORE that change; the entry after it is
+     the next newer row's "before" (or the current entry for the newest). */
   var verb = { insert:"Submitted", update:"Changed", "delete":"Deleted" };
-  body.innerHTML = '<ul class="al-runs">' + rows.map(function(r){
-    var old = r.old_data && r.old_data.data ? calculate(Object.assign({}, r.old_data.data)) : null;
-    return '<li><strong>' + escapeHtml((verb[r.action] || r.action) + " by " + (r.changed_by_name || "system")) + '</strong>' +
-      '<span>' + escapeHtml(whenText(r.changed_at)) +
-      (old ? ' · before this change: Sales W/O Tax SAR ' + escapeHtml(money(old.salesWithoutTax)) + ', COGS SAR ' + escapeHtml(money(old.cogsAmount)) : '') +
-      '</span></li>';
-  }).join("") + '</ul>';
+  var after = nowVersion;
+  var items = rows.map(function(r){
+    var before = r.old_data ? { data: r.old_data.data || {}, breakdowns: r.old_data.breakdowns || [] } : null;
+    var changes = (r.action === "update" && before && after) ? entryDiff(before, after) : [];
+    var html = '<li><strong>' + escapeHtml((verb[r.action] || r.action) + " by " + (r.changed_by_name || "system")) + '</strong>' +
+      '<span>' + escapeHtml(whenText(r.changed_at)) + '</span>';
+    if(r.action === "update"){
+      html += changes.length
+        ? '<table class="hist-diff"><thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead><tbody>' +
+            changes.map(function(c){
+              return '<tr><td>' + escapeHtml(c.label) + '</td><td class="hist-old">' + escapeHtml(c.from) + '</td><td class="hist-new">' + escapeHtml(c.to) + '</td></tr>';
+            }).join("") + '</tbody></table>'
+        : '<span class="hist-none">Saved again with no number changed.</span>';
+    } else if(r.action === "delete" && before){
+      var bc = calculate(Object.assign({}, before.data));
+      html += '<span class="hist-none">Deleted entry had Sales W/O Tax SAR ' + escapeHtml(money(bc.salesWithoutTax)) + ', COGS SAR ' + escapeHtml(money(bc.cogsAmount)) + '.</span>';
+    }
+    html += '</li>';
+    after = before;                 /* moving back in time */
+    return html;
+  });
+  body.innerHTML = '<ul class="al-runs hist-list">' + items.join("") + '</ul>';
+}
+
+/* Field-by-field differences between two versions of a daily entry */
+var ENTRY_FIELD_LABELS = null;
+function entryDiff(before, after){
+  if(!ENTRY_FIELD_LABELS){
+    ENTRY_FIELD_LABELS = {};
+    ALL_FIELDS.forEach(function(f){ ENTRY_FIELD_LABELS[f.key] = f.label; });
+  }
+  var out = [];
+  function fmt(v){
+    if(v === null || v === undefined || v === "") return "blank";
+    var x = Number(v);
+    return isFinite(x) ? new Intl.NumberFormat("en-SA", { maximumFractionDigits:2 }).format(x) : String(v);
+  }
+  ALL_FIELDS.forEach(function(f){
+    var a = before.data[f.key], b = after.data[f.key];
+    var na = (a === "" || a == null) ? null : Number(a), nb = (b === "" || b == null) ? null : Number(b);
+    var same = (na === null && nb === null) || (na !== null && nb !== null && Math.abs(na - nb) < 0.005) ||
+               (isNaN(na) && isNaN(nb) && String(a) === String(b));
+    if(!same) out.push({ label: f.label, from: fmt(a), to: fmt(b) });
+  });
+  var ba = (before.breakdowns || []).length, bb = (after.breakdowns || []).length;
+  if(ba !== bb) out.push({ label: "Breakdowns", from: ba + " event(s)", to: bb + " event(s)" });
+  else if(JSON.stringify(before.breakdowns || []) !== JSON.stringify(after.breakdowns || []))
+    out.push({ label: "Breakdowns", from: "details", to: "changed" });
+  return out;
 }
 
 /* ============================================================
@@ -7755,6 +8019,83 @@ function dashDeltaHtml(k, v, pv, label){
          (flat ? "＝" : (diff > 0 ? "▲" : "▼")) + " " + txt + ' <em>' + escapeHtml(label || "vs same days last month") + '</em></span>';
 }
 
+/* ============================================================
+   STORE RANKING — top and bottom stores for the month, with how many
+   places each moved since the same days of the previous month
+   ============================================================ */
+var DASH_RANK_METRICS = [
+  { key:"salesVsTarget", label:"Sales vs target",   lower:false, fmt:function(v){ return round(v, 1).toFixed(1) + "% of target"; },
+    value:function(a){ return n(a.targetSales) > 0 ? n(a._calc.salesWithoutTax) / n(a.targetSales) * 100 : null; } },
+  { key:"sales",         label:"Sales (SAR)",       lower:false, fmt:function(v){ return "SAR " + money(v); },
+    value:function(a){ return n(a._calc.salesWithoutTax); } },
+  { key:"COGSPct",       label:"COGS %",            lower:true,  fmt:function(v){ return pct(v); },
+    value:function(a){ return n(a._calc.salesWithoutTax) > 0 ? n(a._calc.COGSPct) : null; } },
+  { key:"employeePct",   label:"Employee cost %",   lower:true,  fmt:function(v){ return pct(v); },
+    value:function(a){ return n(a._calc.salesWithoutTax) > 0 ? n(a._calc.employeePct) : null; } },
+  { key:"wastagePct",    label:"Wastage %",         lower:true,  fmt:function(v){ return pct(v); },
+    value:function(a){ return n(a._calc.salesWithoutTax) > 0 ? n(a._calc.wastagePct) : null; } }
+];
+var dashRankMetric = "salesVsTarget";
+var dashRankArgs = null;
+
+function dashRankList(ids, from, to, m){
+  var out = [];
+  ids.forEach(function(id){
+    var recs = recordsBetweenStores([id], from, to);
+    if(!recs.length) return;
+    var v = m.value(aggregate(recs));
+    if(v == null || !isFinite(v)) return;
+    out.push({ id:id, v:v });
+  });
+  out.sort(function(a, b){ return m.lower ? a.v - b.v : b.v - a.v; });
+  out.forEach(function(o, i){ o.rank = i + 1; });
+  return out;
+}
+
+function renderDashRanking(ids, start, end, prevStart, prevEnd, lastDate){
+  var box = q("dashRanking");
+  if(!box) return;
+  dashRankArgs = [ids, start, end, prevStart, prevEnd, lastDate];
+  if(!ids || ids.length < 2){ box.style.display = "none"; return; }
+  var m = DASH_RANK_METRICS.filter(function(x){ return x.key === dashRankMetric; })[0] || DASH_RANK_METRICS[0];
+  var now = dashRankList(ids, start, end, m);
+  if(now.length < 2){ box.style.display = "none"; return; }
+  var prev = {}; dashRankList(ids, prevStart, prevEnd, m).forEach(function(o){ prev[o.id] = o.rank; });
+  var names = {}; (state.stores || []).forEach(function(s){ names[s.id] = s.name; });
+
+  function row(o){
+    var p = prev[o.id], move = "";
+    if(p == null) move = '<span class="kd-rank-mv new" title="No entries in the same days last month">new</span>';
+    else if(p === o.rank) move = '<span class="kd-rank-mv" title="Same place as last month">＝</span>';
+    else move = '<span class="kd-rank-mv ' + (p > o.rank ? "good" : "bad") + '" title="Place ' + p + ' last month">' +
+                (p > o.rank ? "▲ " : "▼ ") + Math.abs(p - o.rank) + '</span>';
+    var nm = names[o.id] && names[o.id] !== o.id ? names[o.id] : "";
+    return '<div class="kd-rank-row"><span class="kd-rank-no">' + o.rank + '</span>' +
+      '<span class="kd-rank-name"><span class="tx-store-chip">' + escapeHtml(o.id) + '</span>' + (nm ? ' ' + escapeHtml(nm) : '') + '</span>' +
+      '<span class="kd-rank-val">' + escapeHtml(m.fmt(o.v)) + '</span>' + move + '</div>';
+  }
+  var lists;
+  if(now.length <= 10){
+    lists = '<div class="kd-rank-col"><h5>All ' + now.length + ' stores</h5>' + now.map(row).join("") + '</div>';
+  } else {
+    var bottom = now.slice(-5).reverse();
+    lists = '<div class="kd-rank"><div class="kd-rank-col"><h5 class="good">Top 5</h5>' + now.slice(0, 5).map(row).join("") + '</div>' +
+            '<div class="kd-rank-col"><h5 class="bad">Bottom 5</h5>' + bottom.map(row).join("") + '</div></div>';
+  }
+  box.innerHTML =
+    '<div class="kd-card-head"><h4>Store ranking</h4><span>' + now.length + ' stores with entries · up to ' + escapeHtml(dateLabel(lastDate)) +
+      ' · arrows = places moved since the same days last month</span>' +
+      '<select class="control-input kd-rank-sel" id="dashRankSel" aria-label="Rank stores by">' +
+        DASH_RANK_METRICS.map(function(x){ return '<option value="' + x.key + '"' + (x.key === m.key ? " selected" : "") + '>' + escapeHtml(x.label) + '</option>'; }).join("") +
+      '</select></div>' + lists;
+  box.style.display = "";
+  var sel = q("dashRankSel");
+  if(sel) sel.addEventListener("change", function(){
+    dashRankMetric = sel.value;
+    if(dashRankArgs) renderDashRanking.apply(null, dashRankArgs);
+  });
+}
+
 function renderDashOverview(agg, rows, mv, start, end, ids){
   var hero = q("dashHero"), att = q("dashAttention"), tiles = q("dashTiles"), head = q("dashDetailHead");
   var detail = document.querySelector("#dashCharts .kd-detail");
@@ -7765,6 +8106,7 @@ function renderDashOverview(agg, rows, mv, start, end, ids){
     hero.innerHTML = ""; tiles.innerHTML = ""; head.innerHTML = "";
     att.innerHTML = '<div class="kd-empty">No saved daily entries for ' + escapeHtml(mv) + ' · ' + escapeHtml(scopeLabel()) + '.</div>';
     detail.style.display = "none";
+    if(q("dashRanking")) q("dashRanking").style.display = "none";
     return;
   }
   detail.style.display = "";
@@ -7855,6 +8197,9 @@ function renderDashOverview(agg, rows, mv, start, end, ids){
     });
   }
   att.innerHTML = attHtml;
+
+  /* ---------- 2b) Store ranking ---------- */
+  renderDashRanking(ids, start, end, isoDate(pS), isoDate(pE), lastDate);
 
   /* ---------- 3) KPI tiles by category ---------- */
   var shown = {}; rows.forEach(function(k){ shown[k.key] = true; });
@@ -8851,6 +9196,48 @@ function fmtPnlPct(v){
   return round(v,1).toFixed(1) + "%";
 }
 
+/* The P&L columns, shared by the table, Excel and PDF.
+   kind: sl / desc / money / pct / diff (signed SAR, coloured) / diffpct (signed %)
+   Actual appears only when real month-end costs exist for every selected
+   store and month; Projected only when the range is inside one month. */
+function pnlColumnSpec(result){
+  var cols = [
+    { head:"SL NO",       kind:"sl",   v:function(r){ return r.sl; } },
+    { head:"DESCRIPTION", kind:"desc", v:function(r){ return r.description; } },
+    { head:"Target SAR",  kind:"money", grp:true, v:function(r){ return r.targetSar; } },
+    { head:"%",           kind:"pct",  v:function(r){ return r.targetPct; } },
+    { head:"Estimated",   kind:"money", grp:true, v:function(r){ return r.actual; } },
+    { head:"%",           kind:"pct",  v:function(r){ return r.actualPct; } },
+    { head:"Variance",    kind:"diff", grp:true, bold:true, v:function(r){ return r.variance; }, cls:function(r){ return r.varianceCls; } },
+    { head:"%",           kind:"diffpct", v:function(r){ return r.variancePct; }, cls:function(r){ return r.varianceCls; } }
+  ];
+  if(result && result.hasReal){
+    cols.push(
+      { head:"Actual",               kind:"money", grp:true, real:true, v:function(r){ return r.real; } },
+      { head:"%",                    kind:"pct",  real:true, v:function(r){ return r.realPct; } },
+      { head:"Actual − Estimated",   kind:"diff", real:true, bold:true, v:function(r){ return r.realDiff; }, cls:function(r){ return r.realDiffCls; } }
+    );
+  }
+  if(result && result.proj){
+    cols.push(
+      { head:"Projected (month end)",   kind:"money", grp:true, proj:true, v:function(r){ return r.proj; } },
+      { head:"%",                       kind:"pct",  proj:true, v:function(r){ return r.projPct; } },
+      { head:"Projected − Month target", kind:"diff", proj:true, bold:true, v:function(r){ return r.projVar; }, cls:function(r){ return r.projVarCls; } }
+    );
+  }
+  return cols;
+}
+function pnlCellText(col, r){
+  var v = col.v(r);
+  if(col.kind === "sl" || col.kind === "desc") return String(v == null ? "" : v);
+  if(v == null || isNaN(v)) return "—";
+  if(col.kind === "money") return fmtPnlMoney(v);
+  if(col.kind === "pct")   return fmtPnlPct(v);
+  if(col.kind === "diff")    return Math.abs(v) < 0.5  ? "0"    : (v > 0 ? "+" : "") + fmtPnlMoney(v);
+  if(col.kind === "diffpct") return Math.abs(v) < 0.05 ? "0.0%" : (v > 0 ? "+" : "") + fmtPnlPct(v);
+  return String(v);
+}
+
 
 /* ---------- P&L EXCEL EXPORT (Formatted) ---------- */
 async function exportPnlCsv(){
@@ -8866,89 +9253,50 @@ async function exportPnlCsv(){
   if(!result.rows.length){ showToast("Nothing to export."); return; }
 
   // 1. Build the raw data array (keep raw numbers, let Excel format them)
-  var aoa = [
-    ["SL NO", "DESCRIPTION", "Target SAR", "%", "Actual / Estimated", "%", "Variance", "%"]
-  ];
-
+  var cols = pnlColumnSpec(result);
+  var aoa = [ cols.map(function(c){ return c.head; }) ];
   result.rows.forEach(function(r){
-    aoa.push([
-      r.sl,
-      r.description,
-      r.targetSar,
-      r.targetPct != null ? (r.targetPct / 100) : null,
-      r.actual,
-      r.actualPct != null ? (r.actualPct / 100) : null,
-      r.variance,
-      r.variancePct != null ? (r.variancePct / 100) : null
-    ]);
+    aoa.push(cols.map(function(c){
+      var v = c.v(r);
+      if(c.kind === "pct" || c.kind === "diffpct") return v != null && !isNaN(v) ? v / 100 : null;
+      return v == null || (typeof v === "number" && isNaN(v)) ? null : v;
+    }));
   });
 
   var ws = XLSX.utils.aoa_to_sheet(aoa);
 
   // 2. Apply Excel Styles (Colors, Bold, Number Formats)
   var range = XLSX.utils.decode_range(ws['!ref']);
-  
   for (var R = range.s.r; R <= range.e.r; ++R) {
     for (var C = range.s.c; C <= range.e.c; ++C) {
-      var cellAddress = { c: C, r: R };
-      var cellRef = XLSX.utils.encode_cell(cellAddress);
-      if (!ws[cellRef]) continue; // skip empty cells
-      
-      var cell = ws[cellRef];
-      var sl = R === 0 ? 0 : aoa[R][0]; // Get SL NO
-
-      // Header Row Styling
+      var cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+      if (!ws[cellRef]) continue;
+      var cell = ws[cellRef], col = cols[C];
       if (R === 0) {
-        cell.s = {
-          font: { bold: true, color: { rgb: "FFFFFF" } },
-          fill: { fgColor: { rgb: "0F172A" } }, // Dark Navy
-          alignment: { horizontal: "center" }
-        };
+        cell.s = { font: { bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "0F172A" } }, alignment: { horizontal: "center", wrapText: true } };
         continue;
       }
-
-      // Data Row Styling
+      var row = result.rows[R - 1], sl = row.sl;
       cell.s = { alignment: { horizontal: (C === 0 || C === 1) ? "left" : "right" } };
-      
-      // Format Numbers
-      if (C === 2 || C === 4) cell.z = '#,##0'; // Money (Target & Actual)
-      if (C === 6) cell.z = '+#,##0;-#,##0;0';  // Variance Money
-      if (C === 3 || C === 5 || C === 7) cell.z = '0.0%'; // Percentages
-      
-      // Format Variance & % Colors based on your logic
-      if (C === 6 || C === 7) { // Only Variance and Variance %
-        var isProfitRow = (sl === 3 || sl === 21 || sl === 29);
-        var val = cell.v;
-        
-        if (val > 0) {
-          if (isProfitRow) cell.s.font = { color: { rgb: "047857" } }; // Green
-          else cell.s.font = { color: { rgb: "B91C1C" } }; // Red
-        } else if (val < 0) {
-          if (isProfitRow) cell.s.font = { color: { rgb: "B91C1C" } }; // Red
-          else cell.s.font = { color: { rgb: "047857" } }; // Green
-        }
-      }
-
-      // Highlight Profit Rows (Gross Margin, Net Margin, EBITDA)
+      if (col.kind === "money") cell.z = '#,##0';
+      if (col.kind === "diff") cell.z = '+#,##0;-#,##0;0';
+      if (col.kind === "pct") cell.z = '0.0%';
+      if (col.kind === "diffpct") cell.z = '+0.0%;-0.0%;0.0%';
+      var cls = col.cls ? col.cls(row) : "";
+      if (cls === "good") cell.s.font = { color: { rgb: "047857" } };
+      if (cls === "bad")  cell.s.font = { color: { rgb: "B91C1C" } };
       if (sl === 3 || sl === 21 || sl === 29) {
         cell.s.font = cell.s.font || {};
         cell.s.font.bold = true;
-        cell.s.fill = { fgColor: { rgb: "F1F5F9" } }; // Light gray background
+        cell.s.fill = { fgColor: { rgb: "F1F5F9" } };
       }
     }
   }
 
   // 3. Set Column Widths
-  ws['!cols'] = [
-    { wch: 8 },  // SL NO
-    { wch: 40 }, // DESCRIPTION
-    { wch: 15 }, // Target SAR
-    { wch: 10 }, // %
-    { wch: 18 }, // Actual
-    { wch: 10 }, // %
-    { wch: 15 }, // Variance
-    { wch: 10 }  // %
-  ];
+  ws['!cols'] = cols.map(function(c){
+    return { wch: c.kind === "sl" ? 8 : c.kind === "desc" ? 40 : (c.kind === "pct" || c.kind === "diffpct") ? 10 : (c.head.length > 12 ? 22 : 16) };
+  });
 
   // 4. Generate and Download
   var wb = XLSX.utils.book_new();
@@ -8975,27 +9323,20 @@ async function exportPnlPdf(){
   var subtitle = "Store: " + pnlScopeText(storeId) + " · " + dateLabel(from) + " – " + dateLabel(to);
   var doc = getPdfContext("Live P&L", subtitle);
 
-  var head = [["SL NO","DESCRIPTION","Target SAR","%","Actual / Estimated","%","Variance","%"]];
+  var cols = pnlColumnSpec(result);
+  var head = [ cols.map(function(c){ return c.head; }) ];
+  var body = result.rows.map(function(r){ return cols.map(function(c){ return pnlCellText(c, r); }); });
 
-  var body = result.rows.map(function(r){
-    var varText = "—";
-    if(r.variance != null){
-      varText = (r.variance >= 0 ? "+" : "") + fmtPnlMoney(r.variance);
-    }
-    var varPctText = "—";
-    if(r.variancePct != null){
-      varPctText = (r.variancePct >= 0 ? "+" : "") + fmtPnlPct(r.variancePct);
-    }
-    return [
-      String(r.sl),
-      r.description,
-      r.targetSar == null ? "—" : fmtPnlMoney(r.targetSar),
-      r.targetPct == null ? "—" : fmtPnlPct(r.targetPct),
-      fmtPnlMoney(r.actual),
-      fmtPnlPct(r.actualPct),
-      varText,
-      varPctText
-    ];
+  /* Fit every column on the landscape page: fixed SL and description, the rest share */
+  var usable = doc.internal.pageSize.getWidth() - 20;
+  var wide = cols.length > 8;
+  var slW = wide ? 9 : 12, descW = wide ? 48 : 70;
+  var restW = (usable - slW - descW) / (cols.length - 2);
+  var colStyles = {};
+  cols.forEach(function(c, i){
+    colStyles[i] = i === 0 ? { cellWidth:slW, halign:"center", fontStyle:"bold" }
+                 : i === 1 ? { cellWidth:descW, halign:"left" }
+                 : { cellWidth:restW, halign:"right" };
   });
 
   doc.autoTable({
@@ -9003,47 +9344,21 @@ async function exportPnlPdf(){
     head: head,
     body: body,
     theme: "grid",
-    styles: { fontSize:8, cellPadding:2, textColor: [15,23,42] }, // Default dark text
-    headStyles: { fillColor:[15,23,42], textColor:[255,255,255], fontStyle:"bold", fontSize:9 },
+    styles: { fontSize: wide ? 6.5 : 8, cellPadding: wide ? 1.5 : 2, textColor: [15,23,42] },
+    headStyles: { fillColor:[15,23,42], textColor:[255,255,255], fontStyle:"bold", fontSize: wide ? 7 : 9 },
     alternateRowStyles: { fillColor:[248,250,252] },
-    columnStyles: {
-      0:{ cellWidth:12, halign:"center", fontStyle:"bold" },
-      1:{ cellWidth:70, halign:"left" },
-      2:{ cellWidth:28, halign:"right" },
-      3:{ cellWidth:16, halign:"right" },
-      4:{ cellWidth:30, halign:"right" },
-      5:{ cellWidth:16, halign:"right" },
-      6:{ cellWidth:28, halign:"right" },
-      7:{ cellWidth:16, halign:"right" }
-    },
+    columnStyles: colStyles,
     didParseCell: function(data){
       if(data.section === "body"){
-        var sl = parseInt(data.row.raw[0], 10);
-        var isProfitRow = (sl === 3 || sl === 21 || sl === 29);
-        
-        // 1. Highlight the Profit Rows (Gross Margin, Net Margin, EBITDA)
-        if(isProfitRow){
+        var row = result.rows[data.row.index], sl = row ? row.sl : 0;
+        if(sl === 3 || sl === 21 || sl === 29){
           data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fillColor = [241, 245, 249]; // Light gray bg
+          data.cell.styles.fillColor = [241, 245, 249];
         }
-
-        // 2. Color the Variance columns (Column index 6 and 7)
-        if(data.column.index === 6 || data.column.index === 7){
-          var rawValStr = data.cell.raw.replace(/[+%]/g, "").replace(/,/g, "");
-          var val = parseFloat(rawValStr);
-          
-          if(!isNaN(val) && val !== 0){
-            if(isProfitRow){
-              // Profit rows: Positive = Green, Negative = Red
-              if(val > 0) data.cell.styles.textColor = [4, 120, 87]; // Green
-              if(val < 0) data.cell.styles.textColor = [185, 28, 28]; // Red
-            } else {
-              // Other rows: Positive = Red, Negative = Green
-              if(val > 0) data.cell.styles.textColor = [185, 28, 28]; // Red
-              if(val < 0) data.cell.styles.textColor = [4, 120, 87]; // Green
-            }
-          }
-        }
+        var col = cols[data.column.index];
+        var cls = col && col.cls && row ? col.cls(row) : "";
+        if(cls === "good") data.cell.styles.textColor = [4, 120, 87];
+        if(cls === "bad")  data.cell.styles.textColor = [185, 28, 28];
       }
     },
     didDrawPage: function(){
@@ -9075,6 +9390,7 @@ async function renderPnl(){
 
   if(rangeChip) rangeChip.textContent = dateLabel(from) + " → " + dateLabel(to) + " · " + scopeLabel();
   table.innerHTML = '<tbody><tr><td class="empty">Loading P&L…</td></tr></tbody>';
+  if(q("pnlInfoChip")) q("pnlInfoChip").style.display = "none";
 
   var storeId = pnlStoreScope();
     if(!storeId.length){
@@ -9108,26 +9424,33 @@ async function renderPnl(){
   /* Summary rows use the Excel's exact SL numbers */
   var SUMMARY_SL = { 3:1, 20:1, 21:1, 28:1, 29:1 };
 
-  /* 8-column header exactly matching the Excel */
-  /* Fixed column widths; every number column is right-aligned, header and
-     values alike, and each SAR column is paired with its % column. */
-  var thead = '<colgroup>' +
-      /* Shares of the full width, so the three SAR / % pairs are spread
-         evenly instead of bunching up on the right */
-      '<col style="width:5%"><col style="width:29%">' +
+  /* Columns: Target · Estimated · Variance, then Actual (real month-end costs,
+     only when uploaded) and Projected (month end, one month only). Every
+     number column is right-aligned and each SAR column has its % beside it. */
+  var cols = pnlColumnSpec(result);
+  var colgroup;
+  if(cols.length === 8){
+    /* Shares of the full width, so the three SAR / % pairs are spread evenly */
+    colgroup = '<col style="width:5%"><col style="width:29%">' +
       '<col style="width:13%"><col style="width:9%">' +
       '<col style="width:13%"><col style="width:9%">' +
-      '<col style="width:13%"><col style="width:9%">' +
-    '</colgroup>' +
-    '<thead><tr>' +
-    '<th class="pc-sl">SL NO</th>' +
-    '<th class="pc-desc">Description</th>' +
-    '<th class="pc-num pc-grp">Target SAR</th>' +
-    '<th class="pc-num">%</th>' +
-    '<th class="pc-num pc-grp">Actual / Estimated</th>' +
-    '<th class="pc-num">%</th>' +
-    '<th class="pc-num pc-grp">Variance</th>' +
-    '<th class="pc-num">%</th>' +
+      '<col style="width:13%"><col style="width:9%">';
+    table.style.minWidth = "";
+    table.classList.remove("pnl-wide");
+  } else {
+    table.classList.add("pnl-wide");
+    var px = cols.map(function(c){
+      return c.kind === "sl" ? 50 : c.kind === "desc" ? 250 : (c.kind === "pct" || c.kind === "diffpct") ? 74 : 124;
+    });
+    colgroup = px.map(function(w){ return '<col style="width:' + w + 'px">'; }).join("");
+    table.style.minWidth = px.reduce(function(s, w){ return s + w; }, 0) + "px";
+  }
+  function colClass(c, extra){
+    var k = c.kind === "sl" ? "pc-sl" : c.kind === "desc" ? "pc-desc" : "num pc-num";
+    return k + (c.grp ? " pc-grp" : "") + (c.real ? " pc-real" : "") + (c.proj ? " pc-proj" : "") + (extra ? " " + extra : "");
+  }
+  var thead = '<colgroup>' + colgroup + '</colgroup><thead><tr>' +
+    cols.map(function(c){ return '<th class="' + colClass(c) + '">' + escapeHtml(c.kind === "desc" ? "Description" : c.head) + '</th>'; }).join("") +
     '</tr></thead>';
 
   var tbody = '<tbody>';
@@ -9136,50 +9459,49 @@ async function renderPnl(){
     var rowStyle = isSummary
       ? 'background-color:#f1f5f9;font-weight:700;border-top:2px solid #94a3b8;border-bottom:2px solid #94a3b8;'
       : '';
-
-    var varText = "—";
-    if(r.variance != null){
-      varText = (r.variance >= 0 ? "+" : "") + fmtPnlMoney(r.variance);
-    }
-    var varPctText = "—";
-    if(r.variancePct != null){
-      varPctText = (r.variancePct >= 0 ? "+" : "") + fmtPnlPct(r.variancePct);
-    }
-
-     /* 
-       1) Gross Margin (3), Net Margin (21), EBITDA (29): 
-          Positive = Green (good), Negative = Red (bad)
-       2) All other rows: 
-          Positive = Red (bad), Negative = Green (good)
-    */
-    var cls = "";
-    if(r.variance != null){
-      var isProfitRow = (r.sl === 3 || r.sl === 21 || r.sl === 29);
-      
-      if(isProfitRow){
-        cls = r.variance >= 0 ? "good" : "bad";
-      } else {
-        cls = r.variance > 0 ? "bad" : (r.variance < 0 ? "good" : "");
-      }
-    }
-
     var pnlRowClass = r.sl === 29 ? "pnl-ebitda"
                     : (r.sl === 3 || r.sl === 21) ? "pnl-margin"
                     : (r.sl === 20 || r.sl === 28) ? "pnl-total"
                     : "";
     tbody += '<tr' + (pnlRowClass ? ' class="' + pnlRowClass + '"' : '') + ' style="' + rowStyle + '">' +
-      '<td class="pc-sl">' + r.sl + '</td>' +
-      '<td class="pc-desc">' + escapeHtml(r.description) + '</td>' +
-      '<td class="num pc-num pc-grp">' + (r.targetSar != null ? fmtPnlMoney(r.targetSar) : "—") + '</td>' +
-      '<td class="num pc-num">' + (r.targetPct != null ? fmtPnlPct(r.targetPct) : "—") + '</td>' +
-      '<td class="num pc-num pc-grp">' + fmtPnlMoney(r.actual) + '</td>' +
-      '<td class="num pc-num">' + fmtPnlPct(r.actualPct) + '</td>' +
-      '<td class="num pc-num pc-grp ' + cls + '" style="font-weight:700">' + varText + '</td>' +
-      '<td class="num pc-num ' + cls + '">' + varPctText + '</td>' +
+      cols.map(function(c){
+        var cls = c.cls ? (c.cls(r) || "") : "";
+        return '<td class="' + colClass(c, cls) + '"' + (c.bold ? ' style="font-weight:700"' : '') + '>' +
+               escapeHtml(pnlCellText(c, r)) + '</td>';
+      }).join("") +
       '</tr>';
   });
   tbody += '</tbody>';
   table.innerHTML = thead + tbody;
+
+  /* What the extra columns mean for this range */
+  var info = q("pnlInfoChip");
+  if(info){
+    var notes = [];
+    var monthNames = (result.months || []).map(monthShortLabel).join(", ");
+    if(result.hasReal){
+      notes.push("<b>Actual</b> = real month-end costs uploaded for " + escapeHtml(monthNames) +
+        ". A cost line missing from the upload keeps its estimated figure.");
+    } else if(result.realMissing){
+      notes.push("<b>Estimated</b> = sales, COGS and employee cost from daily entries; other costs from the monthly budget. " +
+        "Real month-end costs are not set up yet (run 02_SGM_pnl_actuals_and_delete_check.sql).");
+    } else if(result.anyReal && result.realStoreCount < result.storeCount){
+      notes.push("<b>Estimated</b> only: real month-end costs are uploaded for " + result.realStoreCount + " of " +
+        result.storeCount + " selected stores for " + escapeHtml(monthNames) + ". Actual shows when every selected store has them.");
+    } else {
+      notes.push("<b>Estimated</b> = sales, COGS and employee cost from daily entries; other costs from the monthly budget. " +
+        "No real month-end costs uploaded for " + escapeHtml(monthNames) + " yet.");
+    }
+    if(result.proj){
+      notes.push("<b>Projected</b> = " + escapeHtml(monthShortLabel(result.proj.month)) + " at the current pace: " +
+        result.proj.daysWithData + " of " + result.proj.daysInMonth + " days entered, other costs at the full month budget. " +
+        "Compared with the full month target.");
+    } else if((result.months || []).length > 1){
+      notes.push("Projected is shown when the range is inside one month.");
+    }
+    info.innerHTML = notes.join("<br>");
+    info.style.display = result.recordCount ? "" : "none";
+  }
   applyPnlView();
 }
 
@@ -9735,7 +10057,7 @@ function renderPnlCharts(result){
       backgroundColor: "#cbd5e1", borderRadius: 3, maxBarThickness: 26
     });
     sets.push({
-      label: "Actual", data: keyRows.map(function(r){ return round(r.actual, 0); }),
+      label: "Estimated", data: keyRows.map(function(r){ return round(r.actual, 0); }),
       backgroundColor: "#1d4ed8", borderRadius: 3, maxBarThickness: 26
     });
     pnlCharts.target = new Chart(elT, {
@@ -12712,7 +13034,9 @@ function downloadUserImportTemplate(){
   XLSX.writeFile(wb, "SGM_Users_Template.xlsx");
   showToast("Template downloaded.");
 }
- function downloadPnlTargetTemplate(){
+ function downloadPnlActualTemplate(){ downloadPnlTargetTemplate("actual"); }
+ function downloadPnlTargetTemplate(kind){
+  var isActual = kind === "actual";
   /* Dedupe by target key so aliases don't produce duplicate rows */
   var seen = {}, heads = [];
   Object.keys(PNL_HEAD_MAP).forEach(function(k){
@@ -12731,8 +13055,8 @@ function downloadUserImportTemplate(){
   });
   var ws = XLSX.utils.aoa_to_sheet(rows);
   var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Targets");
-  XLSX.writeFile(wb, "SGM_PNL_Targets_Template.xlsx");
+  XLSX.utils.book_append_sheet(wb, ws, isActual ? "Real costs" : "Targets");
+  XLSX.writeFile(wb, isActual ? "SGM_PNL_Real_Costs_Template.xlsx" : "SGM_PNL_Targets_Template.xlsx");
   showToast("Template downloaded.");
 }
 
@@ -13511,6 +13835,8 @@ var sgmTheme = (function(){
       'html[data-theme="dark"] .set-theme-opt.active{border-color:#3b82f6;color:#bfdbfe;box-shadow:0 0 0 3px rgba(59,130,246,.25)}',
       'html[data-theme="dark"] #pnlTable thead th,html[data-theme="dark"] #pnlTable thead th.pc-desc{background:#16244a !important;color:#bfdbfe !important;border-color:#28407a !important}',
       'html[data-theme="dark"] #pnlTable thead th.pc-grp{border-left-color:rgba(147,197,253,.18) !important}',
+      'html[data-theme="dark"] #pnlTable thead th.pc-real{background:#0f3b2e !important;color:#a7f3d0 !important;border-color:#14532d !important}',
+      'html[data-theme="dark"] #pnlTable thead th.pc-proj{background:#2e1f5e !important;color:#ddd6fe !important;border-color:#4c1d95 !important}',
       'html[data-theme="dark"] #pnlTable tr.pnl-ebitda td,html[data-theme="dark"] #pnlTable tr.pnl-ebitda td.pc-desc{background:#16244a !important;color:#e2e8f0 !important;border-color:#28407a !important}',
       'html[data-theme="dark"] #pnlTable tr.pnl-ebitda td.good{color:#86efac !important}',
       'html[data-theme="dark"] #pnlTable tr.pnl-ebitda td.bad{color:#fca5a5 !important}',
@@ -13879,7 +14205,13 @@ q("dashKpi").addEventListener("change", renderDashboard);
   var pnlTargetUpload = q("pnlTargetUploadBtn");
   if(pnlTargetUpload) pnlTargetUpload.addEventListener("click", function(){ uploadPnlTargets().catch(function(e){ console.error(e); }); });
   var pnlTargetTpl = q("pnlTargetTemplateBtn");
-  if(pnlTargetTpl) pnlTargetTpl.addEventListener("click", downloadPnlTargetTemplate);
+  if(pnlTargetTpl) pnlTargetTpl.addEventListener("click", function(){ downloadPnlTargetTemplate("target"); });
+  var pnlActualFile = q("pnlActualFile");
+  if(pnlActualFile) pnlActualFile.addEventListener("change", handlePnlActualFile);
+  var pnlActualUpload = q("pnlActualUploadBtn");
+  if(pnlActualUpload) pnlActualUpload.addEventListener("click", function(){ uploadPnlActuals().catch(function(e){ console.error(e); }); });
+  var pnlActualTpl = q("pnlActualTemplateBtn");
+  if(pnlActualTpl) pnlActualTpl.addEventListener("click", downloadPnlActualTemplate);
   
   // Connect the Weekly Action Plan Modal buttons
   var saveActionBtn = q("actionPlanModalSave");
@@ -15057,6 +15389,10 @@ function exportScorecardCsv(){
    ALERT HISTORY — per check: who was notified, seen, pending, actions
    ============================================================ */
 var ahRows = [];          /* the rows on screen, for the CSV export */
+var ahRunMeta = {};       /* run id → { run_at, trigger, stores_over } */
+function ahCheckLabel(r){
+  return whenText(r.run_at) + " · " + (r.trigger === "manual" ? "run by hand" : "Sunday check") + " · " + r.stores_over + " stores";
+}
 async function renderAlertHistory(){
   var table = q("ahTable"), sum = q("ahSummary"), runSel = q("ahRun");
   if(!table) return;
@@ -15064,11 +15400,24 @@ async function renderAlertHistory(){
   if(!runSel.options.length){
     var runs = await sb.from("alert_runs").select("id,run_at,trigger,stores_over").order("id", { ascending:false }).limit(20);
     if(runs.error){ table.innerHTML = '<tbody><tr><td class="empty">' + escapeHtml(runs.error.message) + '</td></tr></tbody>'; return; }
+    ahRunMeta = {};
     runSel.innerHTML = (runs.data || []).map(function(r, i){
-      return '<option value="' + r.id + '">' + escapeHtml(whenText(r.run_at) + " · " + (r.trigger === "manual" ? "run by hand" : "Sunday check") + " · " + r.stores_over + " stores" + (i === 0 ? " (latest)" : "")) + '</option>';
+      ahRunMeta[r.id] = r;
+      return '<option value="' + r.id + '">' + escapeHtml(ahCheckLabel(r) + (i === 0 ? " (latest)" : "")) + '</option>';
     }).join("");
   }
   var runId = Number(runSel.value);
+  /* Delete is for admin, on checks run by hand only (Sunday checks stay) */
+  var delBtn = q("ahDeleteBtn");
+  if(delBtn){
+    var meta = ahRunMeta[runId];
+    var isAdminUser = !!(currentUser && currentUser.role === "admin");
+    delBtn.style.display = isAdminUser ? "" : "none";
+    delBtn.disabled = !(meta && meta.trigger === "manual");
+    delBtn.title = !meta ? "" : meta.trigger === "manual"
+      ? "Delete this check, its alerts, receipts and actions (for test checks)"
+      : "Sunday checks cannot be deleted";
+  }
   if(!runId){ table.innerHTML = '<tbody><tr><td class="empty">No checks yet.</td></tr></tbody>'; sum.innerHTML = ""; return; }
   table.innerHTML = '<tbody><tr><td class="empty">Loading…</td></tr></tbody>';
 
@@ -15209,7 +15558,41 @@ async function sendFollowupsNow(){
   } catch(e){ showToast("Follow-ups: " + (e.message || e)); }
   finally { btn.disabled = false; btn.textContent = label; }
 }
+/* Admin: delete a test check (run by hand) with its alerts, receipts and actions */
+async function deleteAlertCheck(){
+  var runSel = q("ahRun"), runId = Number(runSel && runSel.value);
+  var meta = ahRunMeta[runId];
+  if(!(currentUser && currentUser.role === "admin")){ showToast("Only admin can delete a check."); return; }
+  if(!meta){ showToast("Pick a check first."); return; }
+  if(meta.trigger !== "manual"){ showToast("Sunday checks cannot be deleted."); return; }
+  /* count what goes with it, so the confirm says it plainly */
+  var rc = await sb.from("alert_receipts").select("id,action_at").eq("run_id", runId);
+  var receipts = (rc.data || []).length, actions = (rc.data || []).filter(function(x){ return x.action_at; }).length;
+  var latest = runSel.selectedIndex === 0;
+  var msg = "Delete this check?\n\n" + ahCheckLabel(meta) + "\n" +
+    receipts + " alert notice(s), " + actions + " with an action typed.\n\n" +
+    "Its alerts, notices, actions and photo links are deleted for good. Notifications already sent to phones stay on the phones." +
+    (latest ? "\n\nThis is the latest check: follow-up reminders move to the check before it." : "") +
+    (actions ? "\n\n⚠ " + actions + " real action(s) were typed against this check." : "");
+  if(!window.confirm(msg)) return;
+  var btn = q("ahDeleteBtn"), label = btn ? btn.textContent : "";
+  if(btn){ btn.disabled = true; btn.textContent = "Deleting…"; }
+  try {
+    var res = await sb.rpc("sgm_delete_alert_run", { p_run_id: runId });
+    if(res.error){
+      if(/sgm_delete_alert_run|schema cache|does not exist|PGRST202/i.test(res.error.message || ""))
+        throw new Error("Delete is not set up yet: run 02_SGM_pnl_actuals_and_delete_check.sql in Supabase.");
+      throw res.error;
+    }
+    var out = res.data || {};
+    showToast("✓ Check deleted (" + (out.cost_alerts || 0) + " cost alerts, " + (out.receipts || 0) + " notices).", "success");
+    runSel.innerHTML = "";                 /* reload the check list */
+    renderAlertHistory();
+  } catch(e){ showToast("Delete failed: " + (e.message || e)); }
+  finally { if(btn){ btn.textContent = label; } }
+}
 (function bindAlertHistory(){
+  var d = q("ahDeleteBtn"); if(d) d.addEventListener("click", function(){ deleteAlertCheck().catch(function(e){ console.error(e); }); });
   ["ahRun","ahStatus"].forEach(function(id){ var el = q(id); if(el) el.addEventListener("change", function(){ renderAlertHistory(); }); });
   var s = q("ahSearch"); if(s) s.addEventListener("input", function(){ renderAlertHistory(); });
   var f = q("ahFollowBtn"); if(f) f.addEventListener("click", function(){ sendFollowupsNow(); });
