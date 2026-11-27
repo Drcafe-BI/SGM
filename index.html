@@ -2948,7 +2948,6 @@ html.theme-anim *,html.theme-anim *::before,html.theme-anim *::after{transition:
           </span>
           <button class="theme-btn" id="themeBtn" type="button" title="Switch to dark mode" aria-label="Switch to dark mode"><svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></svg><svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg></button>
           <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
-          <span class="local-pill"><span class="local-dot"></span>Saved</span>
         </div>
       </div>
     </div>
@@ -6155,6 +6154,12 @@ async function calculatePnl(storeId, fromIso, toIso){
 };
   var hasTargets = Object.keys(budget).some(function(k){ return budget[k] > 0; });
 
+  /* No sales in the range → there is nothing to estimate against, so the
+     budget-based "Actual / Estimated" cost lines stay empty instead of
+     showing the prorated budget. */
+  var noSales = !(sales > 0);
+  function est(v){ return noSales ? null : v; }
+
   /* ---- 4) Build the 29 rows (SL 1-29) ---- */
 
   /* --- SL 1-2 targets (from budget file, with daily fallback for Sales) --- */
@@ -6170,21 +6175,21 @@ async function calculatePnl(storeId, fromIso, toIso){
 
   var ctrlRows = [
     { sl:4,  desc:"Employee Cost",                          actual: employeeCost,                  target: budget.employee_cost },
-    { sl:5,  desc:"Advertisements, Marketing & Promotions", actual: budget.advertisement,          target: budget.advertisement },
-    { sl:6,  desc:"Travel Expenses",                        actual: budget.travel,                 target: budget.travel },
-    { sl:7,  desc:"Communication",                          actual: budget.communication,          target: budget.communication },
-    { sl:8,  desc:"Water",                                  actual: budget.water,                  target: budget.water },
-    { sl:9,  desc:"Recruitment Expenses",                   actual: budget.recruitment,            target: budget.recruitment },
-    { sl:10, desc:"Sewage",                                 actual: budget.sewage,                 target: budget.sewage },
-    { sl:11, desc:"Vehicle Fuel",                           actual: budget.vehicle_fuel,           target: budget.vehicle_fuel },
-    { sl:12, desc:"Gas & Electricity",                      actual: budget.gas_electricity,        target: budget.gas_electricity },
-    { sl:13, desc:"Cleaning & Cleaning Materials",          actual: budget.cleaning,               target: budget.cleaning },
-    { sl:14, desc:"Repair & Maintenance",                   actual: budget.repair_maintenance,     target: budget.repair_maintenance },
-    { sl:15, desc:"Printing & Stationery",                  actual: budget.printing_stationery,    target: budget.printing_stationery },
-    { sl:16, desc:"Computer Expenses",                      actual: budget.computer,               target: budget.computer },
-    { sl:17, desc:"Entertainment Expenses",                 actual: budget.entertainment,          target: budget.entertainment },
-    { sl:18, desc:"Warehouse & Distribution Charges",       actual: budget.warehouse_distribution, target: budget.warehouse_distribution },
-    { sl:19, desc:"SALES EXPENSES",                         actual: budget.sales_expenses,         target: budget.sales_expenses }
+    { sl:5,  desc:"Advertisements, Marketing & Promotions", actual: est(budget.advertisement),     target: budget.advertisement },
+    { sl:6,  desc:"Travel Expenses",                        actual: est(budget.travel),            target: budget.travel },
+    { sl:7,  desc:"Communication",                          actual: est(budget.communication),     target: budget.communication },
+    { sl:8,  desc:"Water",                                  actual: est(budget.water),             target: budget.water },
+    { sl:9,  desc:"Recruitment Expenses",                   actual: est(budget.recruitment),       target: budget.recruitment },
+    { sl:10, desc:"Sewage",                                 actual: est(budget.sewage),            target: budget.sewage },
+    { sl:11, desc:"Vehicle Fuel",                           actual: est(budget.vehicle_fuel),      target: budget.vehicle_fuel },
+    { sl:12, desc:"Gas & Electricity",                      actual: est(budget.gas_electricity),   target: budget.gas_electricity },
+    { sl:13, desc:"Cleaning & Cleaning Materials",          actual: est(budget.cleaning),          target: budget.cleaning },
+    { sl:14, desc:"Repair & Maintenance",                   actual: est(budget.repair_maintenance), target: budget.repair_maintenance },
+    { sl:15, desc:"Printing & Stationery",                  actual: est(budget.printing_stationery), target: budget.printing_stationery },
+    { sl:16, desc:"Computer Expenses",                      actual: est(budget.computer),          target: budget.computer },
+    { sl:17, desc:"Entertainment Expenses",                 actual: est(budget.entertainment),     target: budget.entertainment },
+    { sl:18, desc:"Warehouse & Distribution Charges",       actual: est(budget.warehouse_distribution), target: budget.warehouse_distribution },
+    { sl:19, desc:"SALES EXPENSES",                         actual: est(budget.sales_expenses),    target: budget.sales_expenses }
   ];
 
  /* --- SL 20: TOTAL CONTROLLABLE EXP = sum(SL 4..19) --- */
@@ -6198,11 +6203,11 @@ async function calculatePnl(storeId, fromIso, toIso){
                              : null;
 
   var unctrlRows = [
-    { sl:22, desc:"GOVERNMENT RELATED EXPENSES", actual: budget.government,        target: budget.government },
-    { sl:23, desc:"BANK CHARGES & COMMISSIONS",  actual: budget.bank_charges,      target: budget.bank_charges },
-    { sl:24, desc:"Rent Expenses",               actual: budget.rent,              target: budget.rent },
-    { sl:25, desc:"PROFESSIONAL FEES",           actual: budget.professional_fees, target: budget.professional_fees },
-    { sl:26, desc:"Training Expenses",           actual: budget.training,          target: budget.training },
+    { sl:22, desc:"GOVERNMENT RELATED EXPENSES", actual: est(budget.government),   target: budget.government },
+    { sl:23, desc:"BANK CHARGES & COMMISSIONS",  actual: est(budget.bank_charges), target: budget.bank_charges },
+    { sl:24, desc:"Rent Expenses",               actual: est(budget.rent),         target: budget.rent },
+    { sl:25, desc:"PROFESSIONAL FEES",           actual: est(budget.professional_fees), target: budget.professional_fees },
+    { sl:26, desc:"Training Expenses",           actual: est(budget.training),     target: budget.training },
     { sl:27, desc:"Royalty - Franchise Fee",
       actual: sales * 0.03,
       target: (budget.royalty > 0 ? budget.royalty : (salesTarget != null ? salesTarget * 0.03 : null))
@@ -6227,7 +6232,7 @@ async function calculatePnl(storeId, fromIso, toIso){
                       : null;
 
     /* F — Actual %  =  actual / sales         (Excel: E_row / E2) */
-    var actualPct = sales ? (actual / sales) * 100 : 0;
+    var actualPct = actual == null ? null : (sales ? (actual / sales) * 100 : 0);
 
     /* H — Variance % */
     var variancePct;
@@ -13504,6 +13509,11 @@ var sgmTheme = (function(){
       'html[data-theme="dark"] .btn:not(.small){box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 -2px 0 rgba(0,0,0,.25) inset,0 3px 8px -4px rgba(0,0,0,.6)}',
       'html[data-theme="dark"] .theme-btn,html[data-theme="dark"] .set-ic,html[data-theme="dark"] .set-theme-opt{background:linear-gradient(180deg,#1b2742,#121c33);border-color:#26344f;color:#cbd5e1;box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 4px 10px -4px rgba(0,0,0,.6)}',
       'html[data-theme="dark"] .set-theme-opt.active{border-color:#3b82f6;color:#bfdbfe;box-shadow:0 0 0 3px rgba(59,130,246,.25)}',
+      'html[data-theme="dark"] #pnlTable thead th,html[data-theme="dark"] #pnlTable thead th.pc-desc{background:#16244a !important;color:#bfdbfe !important;border-color:#28407a !important}',
+      'html[data-theme="dark"] #pnlTable thead th.pc-grp{border-left-color:rgba(147,197,253,.18) !important}',
+      'html[data-theme="dark"] #pnlTable tr.pnl-ebitda td,html[data-theme="dark"] #pnlTable tr.pnl-ebitda td.pc-desc{background:#16244a !important;color:#e2e8f0 !important;border-color:#28407a !important}',
+      'html[data-theme="dark"] #pnlTable tr.pnl-ebitda td.good{color:#86efac !important}',
+      'html[data-theme="dark"] #pnlTable tr.pnl-ebitda td.bad{color:#fca5a5 !important}',
       'html[data-theme="dark"] .brand p.page-title{background:linear-gradient(180deg,#16244a,#122042);border-color:#28407a;color:#93c5fd;box-shadow:none}',
       'html[data-theme="dark"] input::placeholder,html[data-theme="dark"] textarea::placeholder{color:#64748b}',
       'html[data-theme="dark"] img{filter:brightness(.92)}'
